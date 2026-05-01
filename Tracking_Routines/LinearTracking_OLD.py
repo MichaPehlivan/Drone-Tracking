@@ -34,52 +34,6 @@ plt.rcParams.update({
 })
 
 
-class KalmanFilter:
-
-    def __init__(self, F, H, Q, R, x0, P0):
-        self.F = F
-        self.H = H
-        self.Q = Q
-        self.R = R
-        self.x = x0
-        self.P = P0
-
-    def predict(self):
-        self.x = np.dot(self.F, self.x)
-        self.P = np.dot(self.F, np.dot(self.P, self.F.T)) + self.Q
-        return self.x
-
-    def update(self, z):
-        S = np.dot(self.H, np.dot(self.P, self.H.T)) + self.R
-        K = np.dot(np.dot(self.P, self.H.T), np.linalg.inv(S))
-        y = z - np.dot(self.H, self.x)
-        self.x = self.x + np.dot(K, y)
-        I = np.eye(self.P.shape[0])
-        self.P = np.dot(I - np.dot(K, self.H), self.P)
-        return self.x
-
-def simulateMeasurements(v_x, v_y, x0, y0, num_datapoints, dt, sigma):
-    """"
-    velocities all in meter/s
-    """
-    x = x0
-    y = y0
-    t = 0
-    measurements = np.zeros((2,num_datapoints))
-    # print(measurements.shape)
-    for i in range(num_datapoints):
-        measurements[0,i] = x + v_x*t + sigma*randn()
-        measurements[1,i] = y + v_y*t + sigma*randn()
-        t += dt
-
-    return measurements
-def generateErrorMatrix(c):
-    P0  =   c*np.array([[1, 0, 0, 0],
-                         [0, 1, 0, 0],
-                         [0, 0, 1, 0],
-                          [0, 0, 0, 1]])
-    return P0
-
 
 if __name__ == '__main__':
 
@@ -120,10 +74,10 @@ if __name__ == '__main__':
 
     x0 = np.array([[xposition0], [yposition0], [1], [1]])
 
-    # P0 = 1000*np.array([[1, 0, 0, 0],
-    #                [0, 1, 0, 0],
-    #                [0, 0, 1, 0],
-    #                [0, 0, 0, 1]])
+    P0 = 1000*np.array([[1, 0, 0, 0],
+                   [0, 1, 0, 0],
+                   [0, 0, 1, 0],
+                   [0, 0, 0, 1]])
     cvalues = [1,10,100,1000,1e4]
     velocity_hist = np.zeros((len(cvalues),num_datapoints))
 
