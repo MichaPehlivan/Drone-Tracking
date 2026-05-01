@@ -9,7 +9,9 @@ from matplotlib.widgets import Slider
 #             https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python/blob/master/07-Kalman-Filter-Math.ipynb
 #             https://stackoverflow.com/questions/66007351/kalman-filter-2d-with-pykalman
 
-
+#             https://aleksandarhaber.com/introduction-to-kalman-filter-derivation-of-the-recursive-least-squares-method-with-python-codes/
+#             https://aleksandarhaber.com/time-propagation-of-state-vector-and-state-covariance-matrix-of-linear-dynamical-systems-intro-to-kalman-filtering/
+#             https://aleksandarhaber.com/kalman-filter-complete-derivation-from-scratch/
 '''
     Assumptions: 
     -Path is linear 
@@ -62,7 +64,7 @@ def simulateMeasurements(v_x, v_y, x0, y0, num_datapoints, dt, sigma):
 if __name__ == '__main__':
 
     dt = 0.1 # timestep is 0.1 seconds
-    sigma = 0.15 # standard deviation of the measurement noise
+    sigma = 0.1 # standard deviation of the measurement noise
     '''
     state vector:
     x
@@ -71,10 +73,8 @@ if __name__ == '__main__':
     y_dot (vy)
     '''
 
-
-
     # for measurement in measurements:
-    num_datapoints = 20
+    num_datapoints = 10
     v_x = 10
     v_y = 10
     xposition0 = 0
