@@ -1,0 +1,133 @@
+import numpy as np
+import struct
+import matplotlib.pyplot as plt
+from scipy.linalg import expm
+from numpy.random import randn
+from matplotlib.widgets import Slider
+# this file will contain the code for the linear tracker.
+# references: https://www.geeksforgeeks.org/python/kalman-filter-in-python/
+#             https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python/blob/master/07-Kalman-Filter-Math.ipynb
+#             https://stackoverflow.com/questions/66007351/kalman-filter-2d-with-pykalman
+
+#             https://aleksandarhaber.com/introduction-to-kalman-filter-derivation-of-the-recursive-least-squares-method-with-python-codes/
+#             https://aleksandarhaber.com/time-propagation-of-state-vector-and-state-covariance-matrix-of-linear-dynamical-systems-intro-to-kalman-filtering/
+#             https://aleksandarhaber.com/kalman-filter-complete-derivation-from-scratch/
+
+'''
+    Assumptions: 
+    -Path is linear 
+    -Use a normal Kalman filter
+    -No clustering is applied yet
+
+'''
+plt.rcParams.update({
+    'font.family': 'serif',
+    'font.serif': ['Times New Roman'],
+    'font.size': 10,          # Standard text size for paper
+    'axes.labelsize': 10,
+    'axes.titlesize': 10,
+    'xtick.labelsize': 8,     # Slightly smaller tick labels
+    'ytick.labelsize': 8,
+    'legend.fontsize': 8,
+    'legend.title_fontsize': 8,
+    'figure.dpi': 300         # High resolution for publication
+})
+
+
+
+if __name__ == '__main__':
+
+    dt = 0.1 # timestep is 0.1 seconds
+    sigma = 0.1 # standard deviation of the measurement noise
+    '''
+    state vector:
+    x
+    y
+    x_dot (vx)
+    y_dot (vy)
+    '''
+
+    # for measurement in measurements:
+    num_datapoints = 10
+    v_x = 10
+    v_y = 10
+    xposition0 = 0
+    yposition0 = 0
+
+    measurements = simulateMeasurements(v_x, v_y, xposition0, yposition0, num_datapoints, dt, sigma)
+
+    F = np.array([[1, 0, dt, 0],
+                  [0, 1, 0, dt],
+                  [0, 0, 1, 0],
+                  [0,0, 0, 1] ])
+
+    H = np.array([[1, 0, 0, 0],
+                  [0, 1, 0, 0]])
+
+    Q = np.array([[1,0,0,0],
+                  [0,1,0,0],
+                  [0,0,1,0],
+                  [0,0,0,1]])
+
+    R = np.array([[1, 0],
+                  [0, 1]])
+
+    x0 = np.array([[xposition0], [yposition0], [1], [1]])
+
+    P0 = 1000*np.array([[1, 0, 0, 0],
+                   [0, 1, 0, 0],
+                   [0, 0, 1, 0],
+                   [0, 0, 0, 1]])
+    cvalues = [1,10,100,1000,1e4]
+    velocity_hist = np.zeros((len(cvalues),num_datapoints))
+
+    for j in range(len(cvalues)):
+
+        P0 = generateErrorMatrix(cvalues[j])
+
+        KF = KalmanFilter(F, H, Q, R, x0, P0)
+        x_history = np.zeros((4, num_datapoints))
+
+        for i in range(num_datapoints):
+            KF.predict()
+            KF.update(measurements[:, i].reshape(2, 1))
+            print(KF.x)
+            velocity_hist[j, i] = KF.x[2]
+
+        plt.plot(velocity_hist[j], label=f'c = {cvalues[j]}', linewidth=2)
+
+        # 3. ADDED: Plot styling and metadata
+    plt.title('Kalman Filter Velocity Estimates vs. Initial Error Covariance Matrix P')
+    plt.xlabel('Time Step', fontsize=12)
+    plt.ylabel('Estimated Velocity', fontsize=12)
+    plt.axhline(y=10, color='red', linestyle=':', linewidth=1.5, label='Target (10 m/s)')
+    plt.legend()
+    plt.tight_layout()
+    # 4. ADDED: Grid lines to easily track values across the plot
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.show()
+
+    # for i in range(num_datapoints):
+    #     KF.predict()
+    #     KF.update(measurements[:, i].reshape(2, 1))
+    #     print(KF.x)
+    #     x_history[:, i] = KF.x.reshape(4, )
+    # # Plot the raw measurements as distinct points (e.g., red 'x' marks)
+    # plt.scatter(measurements[0, :], measurements[1, :], color='red', marker='x', label='Measurements')
+    #
+    # # Plot the Kalman Filter estimates as a continuous tracking line (e.g., blue line)
+    # plt.plot(x_history[0, :], x_history[1, :], color='blue', label='Kalman Filter Track')
+    #
+    # # Add formatting to make the plot clear and readable
+    # plt.title('Kalman Filter Tracking')
+    # plt.xlabel('X Position')
+    # plt.ylabel('Y Position')
+    # plt.legend()
+    # plt.grid(True)
+    #
+    # # Setting axis to 'equal' ensures the x and y scale are the same,
+    # # which is important for visualizing physical paths without distortion.
+    # plt.axis('equal')
+    #
+    # plt.show()
+    #
