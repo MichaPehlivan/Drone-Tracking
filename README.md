@@ -1,6 +1,6 @@
 # Drone-Tracking Repository
 
-##Implemented: 
+## Implemented: 
 Simple Kalman Filter 
 Simulated measurements [Linear]
 
@@ -18,6 +18,6 @@ Simulated measurements [Linear]
   -https://aleksandarhaber.com/kalman-filter-complete-derivation-from-scratch/
 
 
-Changes/Notes:
+## Changes/Notes:
 
 Error covariance matrix P has to have a large trace! The initial certainty must be very low to adopt changes faster.
