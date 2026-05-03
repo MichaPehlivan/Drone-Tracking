@@ -19,7 +19,7 @@ Simulated measurements [Linear]
 
   (G)OSPA distance: <br>
   -https://ieeexplore-ieee-org.tudelft.idm.oclc.org/stamp/stamp.jsp?tp=&arnumber=8009645
-  -https://ieeexplore-ieee-org.tudelft.idm.oclc.org/stamp/stamp.jsp?tp=&arnumber=5744132&tag=1
+  -https://ieeexplore-ieee-org.tudelft.idm.oclc.org/stamp/stamp.jsp?tp=&arnumber=5744132&tag=1 <br>
   Stone soup documentation:<br>
   -https://stonesoup.readthedocs.io/en/v0.1b4/stonesoup.metricgenerator.ospametric.html
   
