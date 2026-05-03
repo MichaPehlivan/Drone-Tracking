@@ -25,11 +25,16 @@ def simulateLinearTrack(v_x, v_y, x0, y0, num_datapoints, dt, sigma):
     x = x0
     y = y0
     t = 0
-    measurements = np.zeros((2,num_datapoints))
+    trueTrack = np.zeros((2,num_datapoints))
+    measurements = np.zeros((2, num_datapoints))
 
     for i in range(num_datapoints):
-        measurements[0,i] = x + v_x*t + sigma*randn()
-        measurements[1,i] = y + v_y*t + sigma*randn()
+        trueTrack[0,i] = x + v_x*t
+        trueTrack[1,i] = y + v_y*t
+
+        measurements[0, i] = trueTrack[0,i] + sigma*randn()
+        measurements[1, i] = trueTrack[1,i] + sigma*randn()
+
         t += dt
 
-    return measurements
+    return measurements, trueTrack

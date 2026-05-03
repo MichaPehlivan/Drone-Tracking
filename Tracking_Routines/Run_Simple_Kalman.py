@@ -10,7 +10,7 @@ This performs a simple kalman filter on simulated data.
 inputs are the same as for the kalman filter + the necessary measurements
 """
 
-def RunSimpleKalman(F, H, Q, R, x0, P0, measurements):
+def RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack):
 
     #Define the kalman filter.
     KF = KalmanFilter(F, H, Q, R, x0, P0)
@@ -26,6 +26,6 @@ def RunSimpleKalman(F, H, Q, R, x0, P0, measurements):
         x_history[:, i] = KF.x.reshape(4, )
 
     #Uses the plotting module to plot the x_history.
-    plotSimpleKalman(x_history, measurements)
+    plotSimpleKalman(x_history, measurements, trueTrack)
 
     return
