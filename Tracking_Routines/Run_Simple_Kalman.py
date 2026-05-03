@@ -4,13 +4,13 @@ import numpy as np
 # Internal
 from Kalman_Filters import KalmanFilter
 from Utils import plotSimpleKalman
-
+from Evaluation_Metrics import get_average_ospa
 """
 This performs a simple kalman filter on simulated data.
 inputs are the same as for the kalman filter + the necessary measurements
 """
 
-def RunSimpleKalman(F, H, Q, R, x0, P0, measurements):
+def RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack):
 
     #Define the kalman filter.
     KF = KalmanFilter(F, H, Q, R, x0, P0)
@@ -25,7 +25,11 @@ def RunSimpleKalman(F, H, Q, R, x0, P0, measurements):
 
         x_history[:, i] = KF.x.reshape(4, )
 
+    average_ospa = get_average_ospa(x_history, trueTrack)
+
     #Uses the plotting module to plot the x_history.
-    plotSimpleKalman(x_history, measurements)
+    plotSimpleKalman(x_history, measurements, trueTrack, average_ospa)
+
+
 
     return
