@@ -17,7 +17,15 @@ Simulated measurements [Linear]
   -https://aleksandarhaber.com/time-propagation-of-state-vector-and-state-covariance-matrix-of-linear-dynamical-systems-intro-to-kalman-filtering/ <br>
   -https://aleksandarhaber.com/kalman-filter-complete-derivation-from-scratch/ <br>
 
+  (G)OSPA distance: <br>
+  -https://ieeexplore-ieee-org.tudelft.idm.oclc.org/stamp/stamp.jsp?tp=&arnumber=8009645
+  -https://ieeexplore-ieee-org.tudelft.idm.oclc.org/stamp/stamp.jsp?tp=&arnumber=5744132&tag=1
+  Stone soup documentation:<br>
+  -https://stonesoup.readthedocs.io/en/v0.1b4/stonesoup.metricgenerator.ospametric.html
+  
 
 ## Changes/Notes:
 
 Error covariance matrix P has to have a large trace! The initial certainty must be very low to adopt changes faster.
+
+Added OSPA distance as an evaluation metric.
