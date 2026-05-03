@@ -1,0 +1,1 @@
+from .Single_Target_Evaluation import get_average_ospa

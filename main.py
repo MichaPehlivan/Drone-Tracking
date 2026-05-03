@@ -9,7 +9,7 @@ from Tracking_Routines import RunSimpleKalman
 dt = 0.1
 x_initial = 0
 y_initial = 0
-measurement_sigma = 0.2 # standard deviation of the measurement
+measurement_sigma = 0 # standard deviation of the measurement
 var = measurement_sigma ** 2
 
 num_datapoints = 10
@@ -45,4 +45,26 @@ P0 = 1000*np.array([[1, 0, 0, 0],
                     [0, 0, 0, 1]])
 
 # Run the kalman filter.
+RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack)
+
+
+
+
+#Run another with high sigma (high ospa distance)
+measurement_sigma = 0.5
+var = measurement_sigma ** 2
+R = np.array([[var,  0],
+              [0,  var]])
+measurements, trueTrack = simulateLinearTrack(v_x=10, v_y = 10, x0 = x_initial, y0 = y_initial, num_datapoints = num_datapoints, dt = dt, sigma = measurement_sigma)
+
+RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack)
+
+
+#Another with zero sigma (zero ospa distance)
+measurement_sigma = 5
+var = measurement_sigma ** 2
+R = np.array([[var,  0],
+              [0,  var]])
+measurements, trueTrack = simulateLinearTrack(v_x=10, v_y = 10, x0 = x_initial, y0 = y_initial, num_datapoints = num_datapoints, dt = dt, sigma = measurement_sigma)
+
 RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack)
