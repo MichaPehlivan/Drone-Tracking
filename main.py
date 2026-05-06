@@ -103,7 +103,8 @@ measurements_polar, trueTrack = simulateLinearTrackPolar(
     y0=y_initial,
     num_datapoints=num_datapoints,
     dt=dt,
-    sigma=measurement_sigma,
+    sigma_r=measurement_sigma,
+    sigma_phi=measurement_sigma,
 )
 
 # Initialize the functions and matrices for the Kalman filter.
@@ -162,9 +163,11 @@ RunExtendedKalman(
 )  # polar
 
 # Run another with low sigma
-measurement_sigma = 0.5
-var = measurement_sigma**2
-R = np.array([[var, 0], [0, var]])
+range_sigma = 0.5
+azimuth_sigma = 0.02  # 1.14 degrees
+var_r = range_sigma**2
+var_phi = azimuth_sigma**2
+R = np.array([[var_r, 0], [0, var_phi]])
 measurements, trueTrack = simulateLinearTrackPolar(
     v_x=10,
     v_y=10,
@@ -172,16 +175,19 @@ measurements, trueTrack = simulateLinearTrackPolar(
     y0=y_initial,
     num_datapoints=num_datapoints,
     dt=dt,
-    sigma=measurement_sigma,
+    sigma_r=range_sigma,
+    sigma_phi=azimuth_sigma,
 )
 
 RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements, trueTrack)
 
 
 # Another with high sigma
-measurement_sigma = 5
-var = measurement_sigma**2
-R = np.array([[var, 0], [0, var]])
+range_sigma = 5
+azimuth_sigma = 0.2  # 11.4 degrees
+var_r = range_sigma**2
+var_phi = azimuth_sigma**2
+R = np.array([[var_r, 0], [0, var_phi]])
 measurements, trueTrack = simulateLinearTrackPolar(
     v_x=10,
     v_y=10,
@@ -189,7 +195,8 @@ measurements, trueTrack = simulateLinearTrackPolar(
     y0=y_initial,
     num_datapoints=num_datapoints,
     dt=dt,
-    sigma=measurement_sigma,
+    sigma_r=range_sigma,
+    sigma_phi=azimuth_sigma,
 )
 
 RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements, trueTrack)

@@ -41,7 +41,7 @@ def simulateLinearTrack(v_x, v_y, x0, y0, num_datapoints, dt, sigma):
     return measurements, trueTrack
 
 
-def simulateLinearTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma):
+def simulateLinearTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigma_phi):
     x = x0
     y = y0
     t = 0
@@ -54,10 +54,10 @@ def simulateLinearTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma):
         trueTrack[1, i] = y + v_y * t
 
         measurements[0, i] = (
-            np.sqrt(trueTrack[0, i] ** 2 + trueTrack[1, i] ** 2) + sigma * randn()
+            np.sqrt(trueTrack[0, i] ** 2 + trueTrack[1, i] ** 2) + sigma_r * randn()
         )  # range
         measurements[1, i] = (
-            np.arctan2(trueTrack[1, i], trueTrack[0, i]) + sigma * randn()
+            np.arctan2(trueTrack[1, i], trueTrack[0, i]) + sigma_phi * randn()
         )  # azimuth
 
         t += dt
