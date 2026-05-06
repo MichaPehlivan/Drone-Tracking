@@ -47,7 +47,6 @@ def simulateLinearTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigm
     t = 0
     trueTrack = np.zeros((2, num_datapoints))
     measurements = np.zeros((2, num_datapoints))
-    measurements_polar = np.zeros((2, num_datapoints))
 
     for i in range(num_datapoints):
         trueTrack[0, i] = x + v_x * t
