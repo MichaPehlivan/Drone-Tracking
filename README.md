@@ -11,7 +11,10 @@ Simulated measurements [Linear]
   -https://www.geeksforgeeks.org/python/kalman-filter-in-python/ <br>
   -https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python/blob/master/07-Kalman-Filter-Math.ipynb <br>
   -https://stackoverflow.com/questions/66007351/kalman-filter-2d-with-pykalman <br>
+
+  Extended and Unscented Kalman Filter: <br>
   -https://ieeexplore-ieee-org.tudelft.idm.oclc.org/stamp/stamp.jsp?tp=&arnumber=7528889 <br>
+  -https://groups.seas.harvard.edu/courses/cs281/papers/unscented.pdf <br>
 
   Math behind the simple kalman filter: <br>
   -https://aleksandarhaber.com/introduction-to-kalman-filter-derivation-of-the-recursive-least-squares-method-with-python-codes/ <br>
