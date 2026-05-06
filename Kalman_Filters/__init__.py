@@ -1,3 +1,1 @@
-from .Simple_Kalman_Filter import KalmanFilter
-
-
+from .Simple_Kalman_Filter import KalmanFilter, ExtendedKalmanFilter

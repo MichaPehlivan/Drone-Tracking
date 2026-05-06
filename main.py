@@ -2,19 +2,91 @@
 import numpy as np
 
 # Internal Packages
-from Track_Simulation import simulateLinearTrack
-from Tracking_Routines import RunSimpleKalman
+from Track_Simulation import simulateLinearTrack, simulateLinearTrackPolar
+from Tracking_Routines import RunSimpleKalman, RunExtendedKalman
 
+# # NORMAL KALMAN FILTER
+# # Initialize values
+# dt = 0.1
+# x_initial = 0
+# y_initial = 0
+# measurement_sigma = 0  # standard deviation of the measurement
+# var = measurement_sigma**2
+
+# num_datapoints = 10
+# # Initialize the simulated measurements.
+# measurements, trueTrack = simulateLinearTrack(
+#     v_x=10,
+#     v_y=10,
+#     x0=x_initial,
+#     y0=y_initial,
+#     num_datapoints=num_datapoints,
+#     dt=dt,
+#     sigma=measurement_sigma,
+# )
+
+# # Initialize the matrices for the Kalman filter.
+# F = np.array([[1, 0, dt, 0], [0, 1, 0, dt], [0, 0, 1, 0], [0, 0, 0, 1]])
+
+# H = np.array([[1, 0, 0, 0], [0, 1, 0, 0]])
+
+# # TODO: Find appropriate covariance matrices.
+# Q = 0.0001 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+
+# R = 1 * np.array([[var, 0], [0, var]])
+
+# x0 = np.array([[x_initial], [y_initial], [1], [1]])
+
+# P0 = 1000 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+
+# # Run the kalman filter.
+# RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack)
+
+
+# # Run another with high sigma (high ospa distance)
+# measurement_sigma = 0.5
+# var = measurement_sigma**2
+# R = np.array([[var, 0], [0, var]])
+# measurements, trueTrack = simulateLinearTrack(
+#     v_x=10,
+#     v_y=10,
+#     x0=x_initial,
+#     y0=y_initial,
+#     num_datapoints=num_datapoints,
+#     dt=dt,
+#     sigma=measurement_sigma,
+# )
+
+# RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack)
+
+
+# # Another with zero sigma (zero ospa distance)
+# measurement_sigma = 5
+# var = measurement_sigma**2
+# R = np.array([[var, 0], [0, var]])
+# measurements, trueTrack = simulateLinearTrack(
+#     v_x=10,
+#     v_y=10,
+#     x0=x_initial,
+#     y0=y_initial,
+#     num_datapoints=num_datapoints,
+#     dt=dt,
+#     sigma=measurement_sigma,
+# )
+
+# RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack)
+
+# EXTENDED KALMAN FILTER
 # Initialize values
 dt = 0.1
-x_initial = 0
-y_initial = 0
+x_initial = 0.1
+y_initial = 0.1
 measurement_sigma = 0  # standard deviation of the measurement
 var = measurement_sigma**2
 
 num_datapoints = 10
 # Initialize the simulated measurements.
-measurements, trueTrack = simulateLinearTrack(
+measurements_cartesian, trueTrack = simulateLinearTrack(
     v_x=10,
     v_y=10,
     x0=x_initial,
@@ -24,10 +96,43 @@ measurements, trueTrack = simulateLinearTrack(
     sigma=measurement_sigma,
 )
 
-# Initialize the matrices for the Kalman filter.
-F = np.array([[1, 0, dt, 0], [0, 1, 0, dt], [0, 0, 1, 0], [0, 0, 0, 1]])
+measurements_polar, trueTrack = simulateLinearTrackPolar(
+    v_x=10,
+    v_y=10,
+    x0=x_initial,
+    y0=y_initial,
+    num_datapoints=num_datapoints,
+    dt=dt,
+    sigma=measurement_sigma,
+)
 
-H = np.array([[1, 0, 0, 0], [0, 1, 0, 0]])
+# Initialize the functions and matrices for the Kalman filter.
+f = lambda x: np.dot(
+    np.array([[1, 0, dt, 0], [0, 1, 0, dt], [0, 0, 1, 0], [0, 0, 0, 1]]), x
+)
+F = lambda x: np.array([[1, 0, dt, 0], [0, 1, 0, dt], [0, 0, 1, 0], [0, 0, 0, 1]])
+
+h_cartesian = lambda x: np.array([x[0], x[1]])
+H_cartesian = lambda x: np.array([[1, 0, 0, 0], [0, 1, 0, 0]])
+h_polar = lambda x: np.array(
+    [[np.sqrt(x[0][0] ** 2 + x[1][0] ** 2)], [np.arctan2(x[1][0], x[0][0])]]
+)  # conversion to polar
+H_polar = lambda x: np.array(
+    [
+        [
+            x[0][0] / np.sqrt(x[0][0] ** 2 + x[1][0] ** 2),
+            x[1][0] / np.sqrt(x[0][0] ** 2 + x[1][0] ** 2),
+            0,
+            0,
+        ],
+        [
+            (-1 * x[1][0]) / (x[0][0] ** 2 + x[1][0] ** 2),
+            x[0][0] / (x[0][0] ** 2 + x[1][0] ** 2),
+            0,
+            0,
+        ],  # derivative of arctan2
+    ]
+)
 
 # TODO: Find appropriate covariance matrices.
 Q = 0.0001 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
@@ -38,15 +143,29 @@ x0 = np.array([[x_initial], [y_initial], [1], [1]])
 
 P0 = 1000 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
-# Run the kalman filter.
-RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack)
+# Run the kalman filter with no noise.
+RunExtendedKalman(
+    f,
+    h_cartesian,
+    F,
+    H_cartesian,
+    Q,
+    R,
+    x0,
+    P0,
+    measurements_cartesian,
+    trueTrack,
+    polar=False,
+)  # cartesian
+RunExtendedKalman(
+    f, h_polar, F, H_polar, Q, R, x0, P0, measurements_polar, trueTrack
+)  # polar
 
-
-# Run another with high sigma (high ospa distance)
+# Run another with low sigma
 measurement_sigma = 0.5
 var = measurement_sigma**2
 R = np.array([[var, 0], [0, var]])
-measurements, trueTrack = simulateLinearTrack(
+measurements, trueTrack = simulateLinearTrackPolar(
     v_x=10,
     v_y=10,
     x0=x_initial,
@@ -56,14 +175,14 @@ measurements, trueTrack = simulateLinearTrack(
     sigma=measurement_sigma,
 )
 
-RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack)
+RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements, trueTrack)
 
 
-# Another with zero sigma (zero ospa distance)
+# Another with high sigma
 measurement_sigma = 5
 var = measurement_sigma**2
 R = np.array([[var, 0], [0, var]])
-measurements, trueTrack = simulateLinearTrack(
+measurements, trueTrack = simulateLinearTrackPolar(
     v_x=10,
     v_y=10,
     x0=x_initial,
@@ -73,4 +192,4 @@ measurements, trueTrack = simulateLinearTrack(
     sigma=measurement_sigma,
 )
 
-RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack)
+RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements, trueTrack)

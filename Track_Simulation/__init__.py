@@ -1,1 +1,1 @@
-from .Linear import simulateLinearTrack
+from .Linear import simulateLinearTrack, simulateLinearTrackPolar

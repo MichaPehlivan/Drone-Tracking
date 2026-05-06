@@ -6,6 +6,7 @@ This file contains the class for the simple kalman filter implementation.
 References used are contained in the README.md file.
 """
 
+
 class KalmanFilter:
     """
     Simple Kalman filter class.
@@ -50,4 +51,57 @@ class KalmanFilter:
         self.x = self.x + np.dot(K, y)
         I = np.eye(self.P.shape[0])
         self.P = np.dot(I - np.dot(K, self.H), self.P)
+        return self.x
+
+
+class ExtendedKalmanFilter:
+    """
+    Extended Kalman filter class.
+
+    inputs:
+        f: State transition function
+        h: Observation function
+        F: Jacobian of f
+        H: Jacobian of h
+        R: Measurement noise covariance TODO: figure out appropriate values 1
+        x0: Initial state estimate
+            state vector:
+                |    x         |
+                |    y         |
+                |  x_dot (vx)  |
+                |_ y_dot (vy) _|
+        Q: Process noise covariance (uncertainty in the process)  TODO: figure out appropriate values 2
+        P0: Initial Error covariance (needs to be a large value)
+
+    Methods:
+        predict: predicts a new state based on current state.
+
+        update: updates the estimate using the measurement and the kalman gain.
+            z: Measurement (cartesian coordinates)
+    """
+
+    def __init__(self, f, h, F, H, Q, R, x0, P0):
+        self.f = f
+        self.h = h
+        self.F = F
+        self.H = H
+        self.Q = Q
+        self.R = R
+        self.x = x0
+        self.P = P0
+
+    def predict(self):
+        A = self.F(self.x)
+        self.x = self.f(self.x)
+        self.P = np.dot(A, np.dot(self.P, A.T)) + self.Q
+        return self.x
+
+    def update(self, z):
+        A = self.H(self.x)
+        S = np.dot(A, np.dot(self.P, A.T)) + self.R
+        K = np.dot(np.dot(self.P, A.T), np.linalg.inv(S))
+        y = z - self.h(self.x)
+        self.x = self.x + np.dot(K, y)
+        I = np.eye(self.P.shape[0])
+        self.P = np.dot(I - np.dot(K, A), self.P)
         return self.x
