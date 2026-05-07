@@ -183,8 +183,8 @@ RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements, trueTrack)
 
 
 # Another with high sigma
-range_sigma = 5
-azimuth_sigma = 0.2  # 11.4 degrees
+range_sigma = 0.1
+azimuth_sigma = 0.1  # 11.4 degrees
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
 R = np.array([[var_r, 0], [0, var_phi]])

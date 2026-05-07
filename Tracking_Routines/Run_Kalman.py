@@ -70,9 +70,12 @@ def RunExtendedKalman(f, h, F, H, Q, R, x0, P0, measurements, trueTrack, polar=T
         measurements[1, :]
     )  # y = r * sin(theta)
 
+
+
     # Uses the plotting module to plot the x_history.
     if polar:
         plotSimpleKalman(x_history, plot_measurements, trueTrack, average_ospa)
+
     else:
         plotSimpleKalman(x_history, measurements, trueTrack, average_ospa)
 
