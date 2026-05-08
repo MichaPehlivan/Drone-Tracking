@@ -2,9 +2,9 @@
 import numpy as np
 
 # Internal Packages
-from Track_Simulation import simulateLinearTrack, simulateLinearTrackPolar
+from Track_Simulation import simulateLinearTrack, simulateLinearTrackPolar, simulateRandomAccelTrackPolar, simulateRandomAccelHoverTrackPolar
 from Tracking_Routines import RunSimpleKalman, RunExtendedKalman
-
+from Utils import animate_track
 # # NORMAL KALMAN FILTER
 # # Initialize values
 # dt = 0.1
@@ -79,12 +79,12 @@ from Tracking_Routines import RunSimpleKalman, RunExtendedKalman
 # EXTENDED KALMAN FILTER
 # Initialize values
 dt = 0.1
-x_initial = 0.1
-y_initial = 0.1
+x_initial = 10
+y_initial = 10
 measurement_sigma = 0  # standard deviation of the measurement
 var = measurement_sigma**2
 
-num_datapoints = 10
+num_datapoints = 100
 # Initialize the simulated measurements.
 measurements_cartesian, trueTrack = simulateLinearTrack(
     v_x=10,
@@ -96,7 +96,7 @@ measurements_cartesian, trueTrack = simulateLinearTrack(
     sigma=measurement_sigma,
 )
 
-measurements_polar, trueTrack = simulateLinearTrackPolar(
+measurements_polar, trueTrack = simulateRandomAccelTrackPolar(
     v_x=10,
     v_y=10,
     x0=x_initial,
@@ -136,61 +136,62 @@ H_polar = lambda x: np.array(
 )
 
 # TODO: Find appropriate covariance matrices.
-Q = 0.0001 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+Q = 0.1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 R = 1 * np.array([[var, 0], [0, var]])
 
 x0 = np.array([[x_initial], [y_initial], [1], [1]])
 
-P0 = 1000 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+P0 = 100 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 # Run the kalman filter with no noise.
-RunExtendedKalman(
-    f,
-    h_cartesian,
-    F,
-    H_cartesian,
-    Q,
-    R,
-    x0,
-    P0,
-    measurements_cartesian,
-    trueTrack,
-    polar=False,
-)  # cartesian
-RunExtendedKalman(
-    f, h_polar, F, H_polar, Q, R, x0, P0, measurements_polar, trueTrack
-)  # polar
+# RunExtendedKalman(
+#     f,
+#     h_cartesian,
+#     F,
+#     H_cartesian,
+#     Q,
+#     R,
+#     x0,
+#     P0,
+#     measurements_cartesian,
+#     trueTrack,
+#     polar=False,
+# )  # cartesian
 
-# Run another with low sigma
-range_sigma = 0.5
-azimuth_sigma = 0.02  # 1.14 degrees
-var_r = range_sigma**2
-var_phi = azimuth_sigma**2
-R = np.array([[var_r, 0], [0, var_phi]])
-measurements, trueTrack = simulateLinearTrackPolar(
-    v_x=10,
-    v_y=10,
-    x0=x_initial,
-    y0=y_initial,
-    num_datapoints=num_datapoints,
-    dt=dt,
-    sigma_r=range_sigma,
-    sigma_phi=azimuth_sigma,
-)
+# RunExtendedKalman(
+#     f, h_polar, F, H_polar, Q, R, x0, P0, measurements_polar, trueTrack
+# )  # polar
+#
+# # Run another with low sigma
+# range_sigma = 0.5
+# azimuth_sigma = 0.02  # 1.14 degrees
+# var_r = range_sigma**2
+# var_phi = azimuth_sigma**2
+# R = np.array([[var_r, 0], [0, var_phi]])
+# measurements, trueTrack = simulateLinearTrackPolar(
+#     v_x=10,
+#     v_y=10,
+#     x0=x_initial,
+#     y0=y_initial,
+#     num_datapoints=num_datapoints,
+#     dt=dt,
+#     sigma_r=range_sigma,
+#     sigma_phi=azimuth_sigma,
+# )
 
-RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements, trueTrack)
+# RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements_polar, trueTrack)
 
 
 # Another with high sigma
 range_sigma = 0.1
-azimuth_sigma = 0.1  # 11.4 degrees
+azimuth_sigma = np.deg2rad(5)  # 11.4 degrees
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
 R = np.array([[var_r, 0], [0, var_phi]])
-measurements, trueTrack = simulateLinearTrackPolar(
-    v_x=10,
-    v_y=10,
+measurements, trueTrack = simulateRandomAccelHoverTrackPolar(
+    v_x=3,
+    v_y=3,
     x0=x_initial,
     y0=y_initial,
     num_datapoints=num_datapoints,
@@ -199,4 +200,6 @@ measurements, trueTrack = simulateLinearTrackPolar(
     sigma_phi=azimuth_sigma,
 )
 
+animate_track(trueTrack, dt=0.1)
 RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements, trueTrack)
+
