@@ -81,8 +81,10 @@ def simulateRandomAccelTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r,
             if np.random.rand() < 0.10:
                 maneuvering = True
 
-                accel_mag = np.random.uniform(0.5 * g, 1.5 * g)
+                accel_mag = np.random.uniform(0.1 * g, 0.7 * g)
+
                 theta = np.random.uniform(0, 2 * np.pi)
+
                 ax, ay = accel_mag * np.cos(theta), accel_mag * np.sin(theta)
 
         else:
@@ -127,10 +129,10 @@ def simulateRandomAccelHoverTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sig
 
         if state == "MOVING":
 
-            if np.random.rand() < 0.1 and i > 5:
+            if np.random.rand() < 0.5*dt and i > 5:
                 state = "BRAKING"
 
-            elif np.random.rand() < 0.3:
+            elif np.random.rand() < dt:
                 theta = np.random.uniform(0, 2 * np.pi)
                 maneuver_accel = np.random.uniform(0.5 * g, 1.5 * g)
                 ax, ay = maneuver_accel * np.cos(theta), maneuver_accel * np.sin(theta)
@@ -138,7 +140,7 @@ def simulateRandomAccelHoverTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sig
         if state == "BRAKING":
 
             v_mag = np.sqrt(curr_vx ** 2 + curr_vy ** 2)
-            if v_mag > 0.5:
+            if v_mag > 5*dt:
                 ax = -(curr_vx / v_mag) * brake_accel
                 ay = -(curr_vy / v_mag) * brake_accel
             else:

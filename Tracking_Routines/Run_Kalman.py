@@ -3,7 +3,7 @@ import numpy as np
 
 # Internal
 from Kalman_Filters import KalmanFilter, ExtendedKalmanFilter
-from Utils import plotSimpleKalman
+from Utils import plotSimpleKalman, animate_TrackKalmanMeasurements
 from Evaluation_Metrics import get_average_ospa
 
 """
@@ -74,7 +74,9 @@ def RunExtendedKalman(f, h, F, H, Q, R, x0, P0, measurements, trueTrack, polar=T
 
     # Uses the plotting module to plot the x_history.
     if polar:
-        plotSimpleKalman(x_history, plot_measurements, trueTrack, average_ospa)
+        # plotSimpleKalman(x_history, plot_measurements, trueTrack, average_ospa)
+        animate_TrackKalmanMeasurements(trueTrack,plot_measurements,x_history, average_ospa, dt=0.1)
+
 
     else:
         plotSimpleKalman(x_history, measurements, trueTrack, average_ospa)
