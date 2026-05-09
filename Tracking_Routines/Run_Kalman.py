@@ -75,7 +75,7 @@ def RunExtendedKalman(f, h, F, H, Q, R, x0, P0, measurements, trueTrack, polar=T
     # Uses the plotting module to plot the x_history.
     if polar:
         # plotSimpleKalman(x_history, plot_measurements, trueTrack, average_ospa)
-        animate_TrackKalmanMeasurements(trueTrack,plot_measurements,x_history, average_ospa, dt=0.1)
+        animate_TrackKalmanMeasurements(trueTrack,plot_measurements,x_history, average_ospa, dt=0.5)
 
 
     else:

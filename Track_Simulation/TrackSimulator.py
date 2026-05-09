@@ -69,7 +69,7 @@ def simulateRandomAccelTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r,
     curr_vx, curr_vy = v_x, v_y
     trueTrack = np.zeros((2, num_datapoints))
     measurements = np.zeros((2, num_datapoints))
-
+    v_max = 16.7
     g = 9.81
 
     maneuvering = False
@@ -94,8 +94,17 @@ def simulateRandomAccelTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r,
 
         curr_vx += ax * dt
         curr_vy += ay * dt
+
+        v_mag = np.sqrt(curr_vx ** 2 + curr_vy ** 2)
+        if v_mag > v_max:
+            normalization = v_max / v_mag
+            curr_vx = curr_vx * normalization
+            curr_vy = curr_vy * normalization
+
         curr_x += curr_vx * dt
         curr_y += curr_vy * dt
+
+
 
         trueTrack[:, i] = [curr_x, curr_y]
 
@@ -163,14 +172,18 @@ def simulateRandomAccelHoverTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sig
 
         curr_vx += ax * dt
         curr_vy += ay * dt
-        curr_x += curr_vx * dt
-        curr_y += curr_vy * dt
 
         v_mag = np.sqrt(curr_vx ** 2 + curr_vy ** 2)
         if v_mag > v_max:
             normalization = v_max / v_mag
             curr_vx = curr_vx * normalization
             curr_vy = curr_vy * normalization
+
+
+        curr_x += curr_vx * dt
+        curr_y += curr_vy * dt
+
+
 
 
         # Save and Measure

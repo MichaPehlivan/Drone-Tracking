@@ -78,13 +78,13 @@ from Utils import animate_track
 
 # EXTENDED KALMAN FILTER
 # Initialize values
-dt = 0.1
-x_initial = 10
-y_initial = 10
+dt = 0.4
+x_initial = 5
+y_initial = 5
 measurement_sigma = 0  # standard deviation of the measurement
 var = measurement_sigma**2
 
-num_datapoints = 50
+num_datapoints = 60
 # Initialize the simulated measurements.
 measurements_cartesian, trueTrack = simulateLinearTrack(
     v_x=10,
@@ -136,13 +136,13 @@ H_polar = lambda x: np.array(
 )
 
 # TODO: Find appropriate covariance matrices.
-Q = 0.5 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+Q = 0.3 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 R = 1 * np.array([[var, 0], [0, var]])
 
 x0 = np.array([[x_initial], [y_initial], [1], [1]])
 
-P0 = 100 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+P0 = 1000 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 # Run the kalman filter with no noise.
 # RunExtendedKalman(
@@ -190,7 +190,7 @@ var_r = range_sigma**2
 var_phi = azimuth_sigma**2
 R = np.array([[var_r, 0],
               [0, var_phi]])
-measurements, trueTrack = simulateRandomAccelHoverTrackPolar(
+measurements, trueTrack = simulateRandomAccelTrackPolar(
     v_x=1,
     v_y=1,
     x0=x_initial,
@@ -201,6 +201,6 @@ measurements, trueTrack = simulateRandomAccelHoverTrackPolar(
     sigma_phi=azimuth_sigma,
 )
 
-# animate_track(trueTrack, dt=0.1)
+animate_track(trueTrack, dt=dt)
 RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements, trueTrack)
 
