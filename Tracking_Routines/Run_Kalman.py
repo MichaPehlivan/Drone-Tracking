@@ -2,8 +2,13 @@
 import numpy as np
 
 # Internal
-from Kalman_Filters import KalmanFilter, ExtendedKalmanFilter
-from Utils import plotSimpleKalman, plotJointKalman, animate_TrackKalmanMeasurements
+from Kalman_Filters import KalmanFilter, ExtendedKalmanFilter, UnscentedKalmanFilter
+from Utils import (
+    plotSimpleKalman,
+    plotJointKalman,
+    animate_TrackKalmanMeasurements,
+    animate_TrackJointKalmanMeasurements,
+)
 from Evaluation_Metrics import get_average_ospa
 
 """
@@ -161,14 +166,17 @@ def RunJointKalman(
 
     # Uses the plotting module to plot the x_history.
     if polar:
-        plotJointKalman(
+        # plotSimpleKalman(x_history, plot_measurements, trueTrack, average_ospa)
+        animate_TrackJointKalmanMeasurements(
+            trueTrack,
+            plot_measurements,
             x_history_ekf,
             x_history_ukf,
-            plot_measurements,
-            trueTrack,
             average_ospa_ekf,
             average_ospa_ukf,
+            dt=0.5,
         )
+
     else:
         plotJointKalman(
             x_history_ekf,
