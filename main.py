@@ -3,7 +3,12 @@ import numpy as np
 
 # Internal Packages
 from Track_Simulation import simulateLinearTrack, simulateLinearTrackPolar
-from Tracking_Routines import RunSimpleKalman, RunExtendedKalman
+from Tracking_Routines import (
+    RunSimpleKalman,
+    RunExtendedKalman,
+    RunUnscentedKalman,
+    RunJointKalman,
+)
 
 # # NORMAL KALMAN FILTER
 # # Initialize values
@@ -116,19 +121,19 @@ F = lambda x: np.array([[1, 0, dt, 0], [0, 1, 0, dt], [0, 0, 1, 0], [0, 0, 0, 1]
 h_cartesian = lambda x: np.array([x[0], x[1]])
 H_cartesian = lambda x: np.array([[1, 0, 0, 0], [0, 1, 0, 0]])
 h_polar = lambda x: np.array(
-    [[np.sqrt(x[0][0] ** 2 + x[1][0] ** 2)], [np.arctan2(x[1][0], x[0][0])]]
+    [[np.sqrt(x[0] ** 2 + x[1] ** 2)], [np.arctan2(x[1], x[0])]]
 )  # conversion to polar
 H_polar = lambda x: np.array(
     [
         [
-            x[0][0] / np.sqrt(x[0][0] ** 2 + x[1][0] ** 2),
-            x[1][0] / np.sqrt(x[0][0] ** 2 + x[1][0] ** 2),
+            x[0] / np.sqrt(x[0] ** 2 + x[1] ** 2),
+            x[1] / np.sqrt(x[0] ** 2 + x[1] ** 2),
             0,
             0,
         ],
         [
-            (-1 * x[1][0]) / (x[0][0] ** 2 + x[1][0] ** 2),
-            x[0][0] / (x[0][0] ** 2 + x[1][0] ** 2),
+            (-1 * x[1]) / (x[0] ** 2 + x[1] ** 2),
+            x[0] / (x[0] ** 2 + x[1] ** 2),
             0,
             0,
         ],  # derivative of arctan2
@@ -136,7 +141,7 @@ H_polar = lambda x: np.array(
 )
 
 # TODO: Find appropriate covariance matrices.
-Q = 0.1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+Q = 0.001 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 R = 1 * np.array([[var, 0], [0, var]])
 
@@ -144,7 +149,7 @@ x0 = np.array([[x_initial], [y_initial], [1], [1]])
 
 P0 = 1000 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
-# Run the kalman filter with no noise.
+# # Run the kalman filter with no noise.
 # RunExtendedKalman(
 #     f,
 #     h_cartesian,
@@ -163,8 +168,8 @@ P0 = 1000 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 # )  # polar
 
 # Run another with low sigma
-range_sigma = 1
-azimuth_sigma = np.deg2rad(5)
+range_sigma = 0.5
+azimuth_sigma = np.deg2rad(1)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
 R = np.array([[var_r, 0], [0, var_phi]])
@@ -179,7 +184,9 @@ measurements, trueTrack = simulateLinearTrackPolar(
     sigma_phi=azimuth_sigma,
 )
 
-RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements, trueTrack)
+RunJointKalman(
+    f, h_polar, F, H_polar, Q, R, x0, P0, 1e-3, 2, 0, measurements, trueTrack
+)
 
 
 # # Another with high sigma
