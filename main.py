@@ -2,9 +2,20 @@
 import numpy as np
 
 # Internal Packages
-from Track_Simulation import simulateLinearTrack, simulateLinearTrackPolar, simulateRandomAccelTrackPolar, simulateRandomAccelHoverTrackPolar
-from Tracking_Routines import RunSimpleKalman, RunExtendedKalman, RunUnscentedKalman, RunJointKalman
+from Track_Simulation import (
+    simulateLinearTrack,
+    simulateLinearTrackPolar,
+    simulateRandomAccelTrackPolar,
+    simulateRandomAccelHoverTrackPolar,
+)
+from Tracking_Routines import (
+    RunSimpleKalman,
+    RunExtendedKalman,
+    RunUnscentedKalman,
+    RunJointKalman,
+)
 from Utils import animate_track
+
 # # NORMAL KALMAN FILTER
 # # Initialize values
 # dt = 0.1
@@ -193,8 +204,7 @@ range_sigma = 0.1
 azimuth_sigma = np.deg2rad(5)  # 11.4 degrees
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
-R = np.array([[var_r, 0],
-              [0, var_phi]])
+R = np.array([[var_r, 0], [0, var_phi]])
 measurements, trueTrack = simulateRandomAccelTrackPolar(
     v_x=1,
     v_y=1,
@@ -229,4 +239,3 @@ RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 0.1, 2, 0, measurements, tr
 # RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements, trueTrack)
 animate_track(trueTrack, dt=dt)
 RunExtendedKalman(f, h_polar, F, H_polar, Q, R, x0, P0, measurements, trueTrack)
-

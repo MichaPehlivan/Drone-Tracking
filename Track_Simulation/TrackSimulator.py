@@ -64,7 +64,9 @@ def simulateLinearTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigm
     return measurements, trueTrack
 
 
-def simulateRandomAccelTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigma_phi):
+def simulateRandomAccelTrackPolar(
+    v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigma_phi
+):
     curr_x, curr_y = x0, y0
     curr_vx, curr_vy = v_x, v_y
     trueTrack = np.zeros((2, num_datapoints))
@@ -95,7 +97,7 @@ def simulateRandomAccelTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r,
         curr_vx += ax * dt
         curr_vy += ay * dt
 
-        v_mag = np.sqrt(curr_vx ** 2 + curr_vy ** 2)
+        v_mag = np.sqrt(curr_vx**2 + curr_vy**2)
         if v_mag > v_max:
             normalization = v_max / v_mag
             curr_vx = curr_vx * normalization
@@ -104,11 +106,9 @@ def simulateRandomAccelTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r,
         curr_x += curr_vx * dt
         curr_y += curr_vy * dt
 
-
-
         trueTrack[:, i] = [curr_x, curr_y]
 
-        r = np.sqrt(curr_x ** 2 + curr_y ** 2)
+        r = np.sqrt(curr_x**2 + curr_y**2)
         phi = np.arctan2(curr_y, curr_x)
 
         measurements[:, i] = [r + sigma_r * randn(), phi + sigma_phi * randn()]
@@ -116,7 +116,9 @@ def simulateRandomAccelTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r,
     return measurements, trueTrack
 
 
-def simulateRandomAccelHoverTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigma_phi):
+def simulateRandomAccelHoverTrackPolar(
+    v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigma_phi
+):
 
     curr_x, curr_y = x0, y0
     curr_vx, curr_vy = v_x, v_y
@@ -124,7 +126,7 @@ def simulateRandomAccelHoverTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sig
     trueTrack = np.zeros((2, num_datapoints))
     measurements = np.zeros((2, num_datapoints))
 
-    v_max = 16.7 #m/s
+    v_max = 16.7  # m/s
     state = "MOVING"
     hover_timer = 0
 
@@ -135,10 +137,9 @@ def simulateRandomAccelHoverTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sig
 
     for i in range(num_datapoints):
 
-
         if state == "MOVING":
 
-            if np.random.rand() < 0.5*dt and i > 5:
+            if np.random.rand() < 0.5 * dt and i > 5:
                 state = "BRAKING"
 
             elif np.random.rand() < dt:
@@ -148,8 +149,8 @@ def simulateRandomAccelHoverTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sig
 
         if state == "BRAKING":
 
-            v_mag = np.sqrt(curr_vx ** 2 + curr_vy ** 2)
-            if v_mag > 5*dt:
+            v_mag = np.sqrt(curr_vx**2 + curr_vy**2)
+            if v_mag > 5 * dt:
                 ax = -(curr_vx / v_mag) * brake_accel
                 ay = -(curr_vy / v_mag) * brake_accel
             else:
@@ -157,7 +158,6 @@ def simulateRandomAccelHoverTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sig
                 curr_vx, curr_vy = 0, 0
                 state = "HOVERING"
                 hover_timer = np.random.randint(5, 15)
-
 
         elif state == "HOVERING":
             ax, ay = 0, 0
@@ -168,27 +168,25 @@ def simulateRandomAccelHoverTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sig
                 state = "MOVING"
                 launch_theta = np.random.uniform(0, 2 * np.pi)
                 maneuver_accel = np.random.uniform(0.5 * g, 1.5 * g)
-                ax, ay = maneuver_accel * np.cos(launch_theta), maneuver_accel * np.sin(launch_theta)
+                ax, ay = maneuver_accel * np.cos(launch_theta), maneuver_accel * np.sin(
+                    launch_theta
+                )
 
         curr_vx += ax * dt
         curr_vy += ay * dt
 
-        v_mag = np.sqrt(curr_vx ** 2 + curr_vy ** 2)
+        v_mag = np.sqrt(curr_vx**2 + curr_vy**2)
         if v_mag > v_max:
             normalization = v_max / v_mag
             curr_vx = curr_vx * normalization
             curr_vy = curr_vy * normalization
 
-
         curr_x += curr_vx * dt
         curr_y += curr_vy * dt
 
-
-
-
         # Save and Measure
         trueTrack[:, i] = [curr_x, curr_y]
-        r = np.sqrt(curr_x ** 2 + curr_y ** 2)
+        r = np.sqrt(curr_x**2 + curr_y**2)
         phi = np.arctan2(curr_y, curr_x)
         measurements[:, i] = [r + sigma_r * randn(), phi + sigma_phi * randn()]
 

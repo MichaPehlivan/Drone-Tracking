@@ -22,11 +22,8 @@ def RunStoneSoupKalman(transition_model, measurement_model, x0, P0, measurements
     for i in range(measurements.shape[1]):
         time_step = start_time + timedelta(seconds=i * dt)
 
-        #Stone Soup Detection object
-        detection = Detection(
-            measurements[:, i].reshape(2, 1),
-            timestamp=time_step
-        )
+        # Stone Soup Detection object
+        detection = Detection(measurements[:, i].reshape(2, 1), timestamp=time_step)
 
         prediction = predictor.predict(current_state, timestamp=time_step)
         current_state = updater.update(prediction, detection)
