@@ -201,7 +201,6 @@ class UnscentedKalmanFilter:
             y_cov += self.wc[i] * np.outer(d, d)
             cross_cov += self.wc[i] * np.outer(d2, d)
         K = np.dot(cross_cov, np.linalg.inv(y_cov))
-        print(K)
         diff = z - y_mean
         diff[1] = (diff[1] + np.pi) % (2 * np.pi) - np.pi
         self.x = self.x + np.dot(K, diff)

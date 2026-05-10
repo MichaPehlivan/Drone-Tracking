@@ -89,7 +89,7 @@ y_initial = 0.1
 measurement_sigma = 0  # standard deviation of the measurement
 var = measurement_sigma**2
 
-num_datapoints = 200
+num_datapoints = 10
 
 # Initialize the functions and matrices for the Kalman filter.
 f = lambda x: np.dot(
@@ -120,13 +120,13 @@ H_polar = lambda x: np.array(
 )
 
 # TODO: Find appropriate covariance matrices.
-Q = 0.001 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+Q = 0.0001 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 R = 1 * np.array([[var, 0], [0, var]])
 
 x0 = np.array([[x_initial], [y_initial], [1], [1]])
 
-P0 = 1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+P0 = 10 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 # # Run the kalman filter with no noise.
 # RunExtendedKalman(
@@ -147,8 +147,8 @@ P0 = 1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 # )  # polar
 
 # Run with no noise
-range_sigma = 1
-azimuth_sigma = np.deg2rad(5)
+range_sigma = 0.5
+azimuth_sigma = np.deg2rad(1)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
 R = np.array([[var_r, 0], [0, var_phi]])
@@ -163,7 +163,7 @@ measurements, trueTrack = simulateLinearTrackPolar(
     sigma_phi=azimuth_sigma,
 )
 
-RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 0.5, 2, 0, measurements, trueTrack)
+RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 2, 2, 0, measurements, trueTrack)
 
 # # Run another with low sigma
 # range_sigma = 1
