@@ -140,14 +140,28 @@ class UnscentedKalmanFilter:
         self.h = h
         self.Q = Q
         self.R = R
-        self.x = x0
+        self.x = x0.flatten()
         self.P = P0
         self.L = len(x0)
+
         self.alpha = alpha
         self.beta = beta
         self.kappa = kappa
         self.labda = alpha**2 * (len(x0) + kappa) - len(x0)
+
         self.wm, self.wc = self.compute_weights()
+
+    def calculate_polar_mean(self, y):
+        y_mean = np.zeros(2)
+        y_mean[0] = np.dot(self.wm, y[:, 0])
+        sum_sin = np.sum(self.wm * np.sin(y[:, 1]))
+        sum_cos = np.sum(self.wm * np.cos(y[:, 1]))
+        y_mean[1] = np.arctan2(sum_sin, sum_cos)
+
+        return y_mean
+
+    def normalize_angle(self, angle):
+        return (angle + np.pi) % (2 * np.pi) - np.pi
 
     def compute_weights(self):
         wm = np.full(2 * self.L + 1, 1 / (2 * (self.L + self.labda)))
@@ -158,52 +172,54 @@ class UnscentedKalmanFilter:
         return wm, wc
 
     def generate_sigma_points(self, x, P):
-        x = x.flatten()
         sigma_points = np.zeros((2 * self.L + 1, self.L))
-        chol = np.linalg.cholesky((self.L + self.labda) * P)
+
+        try:
+            chol = np.linalg.cholesky((self.L + self.labda) * P)
+        except np.linalg.LinAlgError:
+            eps = 1e-9 * np.eye(self.L)
+            chol = np.linalg.cholesky((self.L + self.labda) * (P + eps))
 
         sigma_points[0] = x
         for i in range(self.L):
             sigma_points[i + 1] = x + chol[:, i]
             sigma_points[self.L + i + 1] = x - chol[:, i]
+
         return sigma_points
 
     def predict(self):
-        # generate sigma points for current state
         sigma_points = self.generate_sigma_points(self.x, self.P)
+
         transformed_sigma_points = np.array([self.f(s).flatten() for s in sigma_points])
 
         self.x = np.dot(self.wm, transformed_sigma_points)
-        self.P = np.copy(self.Q)
-        for i in range(2 * self.L + 1):
-            d = transformed_sigma_points[i] - self.x
-            self.P += self.wc[i] * np.outer(d, d)
+
+        dx = transformed_sigma_points - self.x
+        self.P = np.dot((self.wc * dx.T), dx) + self.Q
 
         return self.x, transformed_sigma_points
 
     def update(self, transformed_sigma_points, z):
         z = z.flatten()
+
         transformed_sigma_points = self.generate_sigma_points(self.x, self.P)
         y = np.array([self.h(s).flatten() for s in transformed_sigma_points])
-        # Instead of simple dot product for the whole vector:
-        y_mean = np.zeros(2)
-        y_mean[0] = np.dot(self.wm, y[:, 0])  # Range is linear, dot product is fine
 
-        # For the Azimuth (Angle):
-        sum_sin = np.sum(self.wm * np.sin(y[:, 1]))
-        sum_cos = np.sum(self.wm * np.cos(y[:, 1]))
-        y_mean[1] = np.arctan2(sum_sin, sum_cos)
-        y_cov = np.copy(self.R)
-        cross_cov = np.zeros((self.L, y_mean.shape[0]))
-        for i in range(2 * self.L + 1):
-            d = y[i] - y_mean
-            d[1] = (d[1] + np.pi) % (2 * np.pi) - np.pi
-            d2 = transformed_sigma_points[i] - self.x
-            y_cov += self.wc[i] * np.outer(d, d)
-            cross_cov += self.wc[i] * np.outer(d2, d)
-        K = np.dot(cross_cov, np.linalg.inv(y_cov))
-        diff = z - y_mean
-        diff[1] = (diff[1] + np.pi) % (2 * np.pi) - np.pi
-        self.x = self.x + np.dot(K, diff)
-        self.P = self.P - np.dot(np.dot(K, y_cov), K.T)
+        y_mean = self.calculate_polar_mean(y)
+
+        dy = y - y_mean
+        dy[:, 1] = self.normalize_angle(dy[:, 1])
+        dx = transformed_sigma_points - self.x
+
+        Pyy = np.dot((self.wc * dy.T), dy) + self.R
+        Pxy = np.dot((self.wc * dx.T), dy)
+
+        K = np.dot(Pxy, np.linalg.inv(Pyy))
+
+        S = z - y_mean
+        S[1] = self.normalize_angle(S[1])
+
+        self.x = self.x + np.dot(K, S)
+        self.P = self.P - np.dot(np.dot(K, Pyy), K.T)
+
         return self.x

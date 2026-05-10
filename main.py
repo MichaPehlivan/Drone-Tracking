@@ -84,8 +84,8 @@ from Tracking_Routines import (
 # EXTENDED KALMAN FILTER
 # Initialize values
 dt = 0.1
-x_initial = 0.1
-y_initial = 0.1
+x_initial = 10
+y_initial = 10
 measurement_sigma = 0  # standard deviation of the measurement
 var = measurement_sigma**2
 
@@ -120,13 +120,13 @@ H_polar = lambda x: np.array(
 )
 
 # TODO: Find appropriate covariance matrices.
-Q = 0.001 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+Q = 0.1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
-R = 1 * np.array([[var, 0], [0, var]])
+R = 100 * np.array([[var, 0], [0, var]])
 
-x0 = np.array([[x_initial], [y_initial], [1], [1]])
+x0 = np.array([[x_initial], [y_initial], [10], [10]])
 
-P0 = 1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+P0 = 10 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 # # Run the kalman filter with no noise.
 # RunExtendedKalman(
@@ -147,6 +147,25 @@ P0 = 1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 # )  # polar
 
 # Run with no noise
+range_sigma = 0
+azimuth_sigma = np.deg2rad(0)
+var_r = range_sigma**2
+var_phi = azimuth_sigma**2
+R = np.array([[var_r, 0], [0, var_phi]])
+measurements, trueTrack = simulateLinearTrackPolar(
+    v_x=10,
+    v_y=10,
+    x0=x_initial,
+    y0=y_initial,
+    num_datapoints=num_datapoints,
+    dt=dt,
+    sigma_r=range_sigma,
+    sigma_phi=azimuth_sigma,
+)
+
+RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 0.5, 2, 0, measurements, trueTrack)
+
+# Run another with low sigma
 range_sigma = 0.5
 azimuth_sigma = np.deg2rad(1)
 var_r = range_sigma**2
@@ -163,28 +182,7 @@ measurements, trueTrack = simulateLinearTrackPolar(
     sigma_phi=azimuth_sigma,
 )
 
-RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 2, 2, 0, measurements, trueTrack)
-
-# # Run another with low sigma
-# range_sigma = 1
-# azimuth_sigma = np.deg2rad(5)
-# var_r = range_sigma**2
-# var_phi = azimuth_sigma**2
-# R = np.array([[var_r, 0], [0, var_phi]])
-# measurements, trueTrack = simulateLinearTrackPolar(
-#     v_x=10,
-#     v_y=10,
-#     x0=x_initial,
-#     y0=y_initial,
-#     num_datapoints=num_datapoints,
-#     dt=dt,
-#     sigma_r=range_sigma,
-#     sigma_phi=azimuth_sigma,
-# )
-
-# RunJointKalman(
-#     f, h_polar, F, H_polar, Q, R, x0, P0, 1e-3, 2, 0, measurements, trueTrack
-# )
+RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 0.1, 2, 0, measurements, trueTrack)
 
 
 # # Another with high sigma
