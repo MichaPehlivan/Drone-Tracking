@@ -184,16 +184,26 @@ class UnscentedKalmanFilter:
     def update(self, transformed_sigma_points, z):
         z = z.flatten()
         y = np.array([self.h(s).flatten() for s in transformed_sigma_points])
-        y_mean = np.dot(self.wm, y)
+        # Instead of simple dot product for the whole vector:
+        y_mean = np.zeros(2)
+        y_mean[0] = np.dot(self.wm, y[:, 0])  # Range is linear, dot product is fine
+
+        # For the Azimuth (Angle):
+        sum_sin = np.sum(self.wm * np.sin(y[:, 1]))
+        sum_cos = np.sum(self.wm * np.cos(y[:, 1]))
+        y_mean[1] = np.arctan2(sum_sin, sum_cos)
         y_cov = np.copy(self.R)
         cross_cov = np.zeros((self.L, y_mean.shape[0]))
         for i in range(2 * self.L + 1):
             d = y[i] - y_mean
+            d[1] = (d[1] + np.pi) % (2 * np.pi) - np.pi
             d2 = transformed_sigma_points[i] - self.x
             y_cov += self.wc[i] * np.outer(d, d)
             cross_cov += self.wc[i] * np.outer(d2, d)
         K = np.dot(cross_cov, np.linalg.inv(y_cov))
+        print(K)
         diff = z - y_mean
+        diff[1] = (diff[1] + np.pi) % (2 * np.pi) - np.pi
         self.x = self.x + np.dot(K, diff)
         self.P = self.P - np.dot(np.dot(K, y_cov), K.T)
         return self.x
