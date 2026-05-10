@@ -151,18 +151,22 @@ class UnscentedKalmanFilter:
 
         self.wm, self.wc = self.compute_weights()
 
+    # calculate mean while normalizing angle
     def calculate_polar_mean(self, y):
         y_mean = np.zeros(2)
         y_mean[0] = np.dot(self.wm, y[:, 0])
+
         sum_sin = np.sum(self.wm * np.sin(y[:, 1]))
         sum_cos = np.sum(self.wm * np.cos(y[:, 1]))
         y_mean[1] = np.arctan2(sum_sin, sum_cos)
 
         return y_mean
 
+    # keep angle in [-pi, pi]
     def normalize_angle(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
 
+    # compute sigma point weights
     def compute_weights(self):
         wm = np.full(2 * self.L + 1, 1 / (2 * (self.L + self.labda)))
         wc = np.full(2 * self.L + 1, 1 / (2 * (self.L + self.labda)))
@@ -176,7 +180,9 @@ class UnscentedKalmanFilter:
 
         try:
             chol = np.linalg.cholesky((self.L + self.labda) * P)
-        except np.linalg.LinAlgError:
+        except (
+            np.linalg.LinAlgError
+        ):  # if matrix is not positive semidefinite, try to make it so
             eps = 1e-9 * np.eye(self.L)
             chol = np.linalg.cholesky((self.L + self.labda) * (P + eps))
 
@@ -188,12 +194,15 @@ class UnscentedKalmanFilter:
         return sigma_points
 
     def predict(self):
+        # generate sigma points from current estimate
         sigma_points = self.generate_sigma_points(self.x, self.P)
-
+        # pass sigma points trough system model
         transformed_sigma_points = np.array([self.f(s).flatten() for s in sigma_points])
 
+        # estimate mean by summing sigma points with weights
         self.x = np.dot(self.wm, transformed_sigma_points)
 
+        # estimate covariance
         dx = transformed_sigma_points - self.x
         self.P = np.dot((self.wc * dx.T), dx) + self.Q
 
@@ -202,18 +211,24 @@ class UnscentedKalmanFilter:
     def update(self, transformed_sigma_points, z):
         z = z.flatten()
 
+        # recompute sigma points from most recent estimate
         transformed_sigma_points = self.generate_sigma_points(self.x, self.P)
+        # pass sigma points trough observation model
         y = np.array([self.h(s).flatten() for s in transformed_sigma_points])
 
+        # estimate mean while keeping angles intact
         y_mean = self.calculate_polar_mean(y)
 
+        # compute residuals
         dy = y - y_mean
         dy[:, 1] = self.normalize_angle(dy[:, 1])
         dx = transformed_sigma_points - self.x
 
+        # estimate covariances
         Pyy = np.dot((self.wc * dy.T), dy) + self.R
         Pxy = np.dot((self.wc * dx.T), dy)
 
+        # kalman gain
         K = np.dot(Pxy, np.linalg.inv(Pyy))
 
         S = z - y_mean
