@@ -164,8 +164,8 @@ class UnscentedKalmanFilter:
 
         sigma_points[0] = x
         for i in range(self.L):
-            sigma_points[i + 1] = x + chol[i]
-            sigma_points[self.L + i + 1] = x - chol[i]
+            sigma_points[i + 1] = x + chol[:, i]
+            sigma_points[self.L + i + 1] = x - chol[:, i]
         return sigma_points
 
     def predict(self):
@@ -183,6 +183,7 @@ class UnscentedKalmanFilter:
 
     def update(self, transformed_sigma_points, z):
         z = z.flatten()
+        transformed_sigma_points = self.generate_sigma_points(self.x, self.P)
         y = np.array([self.h(s).flatten() for s in transformed_sigma_points])
         # Instead of simple dot product for the whole vector:
         y_mean = np.zeros(2)
