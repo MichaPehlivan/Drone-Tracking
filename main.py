@@ -15,6 +15,7 @@ from Tracking_Routines import (
     RunJointKalman,
 )
 from Utils import animate_track
+from Utils.KalmanTuner import TuneEKF, TuneUKF
 
 # EXTENDED KALMAN FILTER
 # Initialize values
@@ -68,8 +69,8 @@ range_sigma = 0
 azimuth_sigma = np.deg2rad(0)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
-R = np.array([[var_r, 0], [0, var_phi]])
-measurements, trueTrack = simulateRandomAccelHoverTrackPolar(
+R = 1 * np.array([[var_r, 0], [0, var_phi]])
+measurements, trueTrack = simulateRandomAccelTrackPolar(
     v_x=1,
     v_y=1,
     x0=x_initial,
@@ -81,15 +82,17 @@ measurements, trueTrack = simulateRandomAccelHoverTrackPolar(
 )
 
 # animate_track(trueTrack, dt=dt)
-RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 0.5, 2, 0, measurements, trueTrack)
+RunJointKalman(
+    f, h_polar, F, H_polar, Q, R, x0, P0, 0.01, 2, 0, measurements, trueTrack
+)
 
 # Another with low sigma
 range_sigma = 1
 azimuth_sigma = np.deg2rad(3)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
-R = np.array([[var_r, 0], [0, var_phi]])
-measurements, trueTrack = simulateRandomAccelHoverTrackPolar(
+R = 1 * np.array([[var_r, 0], [0, var_phi]])
+measurements, trueTrack = simulateRandomAccelTrackPolar(
     v_x=1,
     v_y=1,
     x0=x_initial,
@@ -101,15 +104,19 @@ measurements, trueTrack = simulateRandomAccelHoverTrackPolar(
 )
 
 # animate_track(trueTrack, dt=dt)
-RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 0.5, 2, 0, measurements, trueTrack)
+RunJointKalman(
+    f, h_polar, F, H_polar, Q, R, x0, P0, 0.01, 2, 0, measurements, trueTrack
+)
+# TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, measurements, trueTrack, 100)
+# TuneUKF(f, h_polar, x0, var_r, var_phi, 2, 0, measurements, trueTrack, 100)
 
 # Another with high sigma
 range_sigma = 10
 azimuth_sigma = np.deg2rad(5)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
-R = np.array([[var_r, 0], [0, var_phi]])
-measurements, trueTrack = simulateRandomAccelHoverTrackPolar(
+R = 1 * np.array([[var_r, 0], [0, var_phi]])
+measurements, trueTrack = simulateRandomAccelTrackPolar(
     v_x=1,
     v_y=1,
     x0=x_initial,
@@ -121,4 +128,8 @@ measurements, trueTrack = simulateRandomAccelHoverTrackPolar(
 )
 
 # animate_track(trueTrack, dt=dt)
-RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 0.5, 2, 0, measurements, trueTrack)
+RunJointKalman(
+    f, h_polar, F, H_polar, Q, R, x0, P0, 0.01, 2, 0, measurements, trueTrack
+)
+# TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, measurements, trueTrack)
+# TuneUKF(f, h_polar, x0, var_r, var_phi, 2, 0, measurements, trueTrack)
