@@ -79,13 +79,13 @@ H_polar = lambda x: np.array(
 )
 
 # TODO: Find appropriate covariance matrices.
-Q = 0.0001 * np.eye(6)
+Q = 0.1 * np.eye(6)
 
-R = 0.01 * np.array([[var, 0], [0, var]])
+R = 1 * np.array([[var, 0], [0, var]])
 
 x0 = np.array([[x_initial], [y_initial], [1], [1], [1], [1]])
 
-P0 = 0.1 * np.eye(6)
+P0 = 0.0001 * np.eye(6)
 
 # # Run with no noise
 # range_sigma = 0
@@ -110,11 +110,11 @@ P0 = 0.1 * np.eye(6)
 # )
 
 # Another with low sigma
-range_sigma = 0.5
-azimuth_sigma = np.deg2rad(1)
+range_sigma = 1
+azimuth_sigma = np.deg2rad(2)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
-R = 0.01 * np.array([[var_r, 0], [0, var_phi]])
+R = 1 * np.array([[var_r, 0], [0, var_phi]])
 measurements, trueTrack = simulateRandomAccelTrackPolar(
     v_x=1,
     v_y=1,
@@ -127,9 +127,7 @@ measurements, trueTrack = simulateRandomAccelTrackPolar(
 )
 
 # animate_track(trueTrack, dt=dt)
-RunJointKalman(
-    f, h_polar, F, H_polar, Q, R, x0, P0, 0.001, 2, 0, measurements, trueTrack
-)
+RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 2, 2, 0, measurements, trueTrack)
 # TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, measurements, trueTrack, 10)
 # TuneUKF(f, h_polar, x0, var_r, var_phi, 2, 0, measurements, trueTrack, 10)
 
