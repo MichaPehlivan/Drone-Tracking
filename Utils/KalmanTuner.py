@@ -4,8 +4,15 @@ from Evaluation_Metrics.Single_Target_Evaluation import get_average_ospa
 from Kalman_Filters import ExtendedKalmanFilter, UnscentedKalmanFilter
 
 
-def TuneEKF(f, h, F, H, x0, var_r, var_phi, measurements, trueTrack, N):
-    Q_base = 1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+def TuneEKF(f, h, F, H, x0, var_r, var_phi, dt, measurements, trueTrack, N):
+    Q_base = 0.3**2 * np.array(
+        [
+            [(dt**4) / 4, 0, (dt**3) / 2, 0],
+            [0, (dt**4) / 4, 0, (dt**3) / 2],
+            [(dt**3) / 2, 0, dt**2, 0],
+            [0, (dt**3) / 2, 0, dt**2],
+        ]
+    )
 
     R_base = 1 * np.array([[var_r, 0], [0, var_phi]])
 
@@ -48,8 +55,15 @@ def TuneEKF(f, h, F, H, x0, var_r, var_phi, measurements, trueTrack, N):
     print(f"Minimum OSPA for EKF = {scores[min_params]}, with {min_params}")
 
 
-def TuneUKF(f, h, x0, var_r, var_phi, beta, kappa, measurements, trueTrack, N):
-    Q_base = 1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+def TuneUKF(f, h, x0, var_r, var_phi, dt, beta, kappa, measurements, trueTrack, N):
+    Q_base = 0.3**2 * np.array(
+        [
+            [(dt**4) / 4, 0, (dt**3) / 2, 0],
+            [0, (dt**4) / 4, 0, (dt**3) / 2],
+            [(dt**3) / 2, 0, dt**2, 0],
+            [0, (dt**3) / 2, 0, dt**2],
+        ]
+    )
 
     R_base = 1 * np.array([[var_r, 0], [0, var_phi]])
 
@@ -97,5 +111,5 @@ def TuneUKF(f, h, x0, var_r, var_phi, beta, kappa, measurements, trueTrack, N):
                         f"|Q|={Q_mul}, |R|={R_mul}, |P0|={P0_mul}, alpha={alpha}"
                     ] = (average_score / N)
 
-    min_params = min(scores, key=scores.get)
+    min_params = min((k for k in scores if scores[k] != 0), key=lambda k: scores[k])
     print(f"Minimum OSPA for UKF = {scores[min_params]}, with {min_params}")

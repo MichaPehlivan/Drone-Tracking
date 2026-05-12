@@ -56,13 +56,24 @@ H_polar = lambda x: np.array(
 )
 
 # TODO: Find appropriate covariance matrices.
-Q = 1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+Q = (
+    100
+    * 0.3**2
+    * np.array(
+        [
+            [(dt**4) / 4, 0, (dt**3) / 2, 0],
+            [0, (dt**4) / 4, 0, (dt**3) / 2],
+            [(dt**3) / 2, 0, dt**2, 0],
+            [0, (dt**3) / 2, 0, dt**2],
+        ]
+    )
+)
 
 R = 1 * np.array([[var, 0], [0, var]])
 
 x0 = np.array([[x_initial], [y_initial], [1], [1]])
 
-P0 = 1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+P0 = 0.0001 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 # Run with no noise
 range_sigma = 0
@@ -82,13 +93,13 @@ measurements, trueTrack = simulateRandomAccelTrackPolar(
 )
 
 # animate_track(trueTrack, dt=dt)
-RunJointKalman(
-    f, h_polar, F, H_polar, Q, R, x0, P0, 0.01, 2, 0, measurements, trueTrack
-)
+# RunJointKalman(
+#     f, h_polar, F, H_polar, Q, R, x0, P0, 0.01, 2, 0, measurements, trueTrack
+# )
 
 # Another with low sigma
-range_sigma = 1
-azimuth_sigma = np.deg2rad(3)
+range_sigma = 0.5
+azimuth_sigma = np.deg2rad(1)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
 R = 1 * np.array([[var_r, 0], [0, var_phi]])
@@ -104,11 +115,9 @@ measurements, trueTrack = simulateRandomAccelTrackPolar(
 )
 
 # animate_track(trueTrack, dt=dt)
-RunJointKalman(
-    f, h_polar, F, H_polar, Q, R, x0, P0, 0.01, 2, 0, measurements, trueTrack
-)
-# TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, measurements, trueTrack, 100)
-# TuneUKF(f, h_polar, x0, var_r, var_phi, 2, 0, measurements, trueTrack, 100)
+RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 2, 2, 0, measurements, trueTrack)
+# TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, measurements, trueTrack, 10)
+# TuneUKF(f, h_polar, x0, var_r, var_phi, dt, 2, 0, measurements, trueTrack, 10)
 
 # Another with high sigma
 range_sigma = 10
@@ -128,8 +137,8 @@ measurements, trueTrack = simulateRandomAccelTrackPolar(
 )
 
 # animate_track(trueTrack, dt=dt)
-RunJointKalman(
-    f, h_polar, F, H_polar, Q, R, x0, P0, 0.01, 2, 0, measurements, trueTrack
-)
+# RunJointKalman(
+#     f, h_polar, F, H_polar, Q, R, x0, P0, 0.01, 2, 0, measurements, trueTrack
+# )
 # TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, measurements, trueTrack)
 # TuneUKF(f, h_polar, x0, var_r, var_phi, 2, 0, measurements, trueTrack)
