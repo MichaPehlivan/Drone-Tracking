@@ -4,19 +4,12 @@ from Evaluation_Metrics.Single_Target_Evaluation import get_average_ospa
 from Kalman_Filters import ExtendedKalmanFilter, UnscentedKalmanFilter
 
 
-def TuneEKF(f, h, F, H, x0, var_r, var_phi, dt, measurements, trueTrack, N):
-    Q_base = 0.3**2 * np.array(
-        [
-            [(dt**4) / 4, 0, (dt**3) / 2, 0],
-            [0, (dt**4) / 4, 0, (dt**3) / 2],
-            [(dt**3) / 2, 0, dt**2, 0],
-            [0, (dt**3) / 2, 0, dt**2],
-        ]
-    )
+def TuneEKF(f, h, F, H, x0, var_r, var_phi, measurements, trueTrack, N):
+    Q_base = 1.0 * np.eye(6)
 
     R_base = 1 * np.array([[var_r, 0], [0, var_phi]])
 
-    P0_base = 1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+    P0_base = 1 * np.eye(6)
 
     Q_space = np.array([0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000])
     R_space = np.array([0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000])
@@ -36,7 +29,7 @@ def TuneEKF(f, h, F, H, x0, var_r, var_phi, dt, measurements, trueTrack, N):
                     KF = ExtendedKalmanFilter(f, h, F, H, Q, R, x0, P0)
 
                     # Initialize the history array.
-                    x_history = np.zeros((4, len(measurements[0, :])))
+                    x_history = np.zeros((6, len(measurements[0, :])))
 
                     # Iterate over measurements to implement the recursive structure.
                     for i in range(len(measurements[0, :])):
@@ -44,7 +37,7 @@ def TuneEKF(f, h, F, H, x0, var_r, var_phi, dt, measurements, trueTrack, N):
                         KF.update(measurements[:, i].reshape(2, 1))
 
                         x_history[:, i] = KF.x.reshape(
-                            4,
+                            6,
                         )
 
                     average_ospa = get_average_ospa(x_history, trueTrack)
@@ -55,19 +48,12 @@ def TuneEKF(f, h, F, H, x0, var_r, var_phi, dt, measurements, trueTrack, N):
     print(f"Minimum OSPA for EKF = {scores[min_params]}, with {min_params}")
 
 
-def TuneUKF(f, h, x0, var_r, var_phi, dt, beta, kappa, measurements, trueTrack, N):
-    Q_base = 0.3**2 * np.array(
-        [
-            [(dt**4) / 4, 0, (dt**3) / 2, 0],
-            [0, (dt**4) / 4, 0, (dt**3) / 2],
-            [(dt**3) / 2, 0, dt**2, 0],
-            [0, (dt**3) / 2, 0, dt**2],
-        ]
-    )
+def TuneUKF(f, h, x0, var_r, var_phi, beta, kappa, measurements, trueTrack, N):
+    Q_base = 1.0 * np.eye(6)
 
     R_base = 1 * np.array([[var_r, 0], [0, var_phi]])
 
-    P0_base = 1 * np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
+    P0_base = 1 * np.eye(6)
 
     Q_space = np.array([0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000])
     R_space = np.array([0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000])
@@ -91,7 +77,7 @@ def TuneUKF(f, h, x0, var_r, var_phi, dt, beta, kappa, measurements, trueTrack, 
                         )
 
                         # Initialize the history array.
-                        x_history = np.zeros((4, len(measurements[0, :])))
+                        x_history = np.zeros((6, len(measurements[0, :])))
 
                         # Iterate over measurements to implement the recursive structure.
                         try:
@@ -100,7 +86,7 @@ def TuneUKF(f, h, x0, var_r, var_phi, dt, beta, kappa, measurements, trueTrack, 
                                 KF.update(sigma, measurements[:, i].reshape(2, 1))
 
                                 x_history[:, i] = KF.x.reshape(
-                                    4,
+                                    6,
                                 )
 
                             average_ospa = get_average_ospa(x_history, trueTrack)
