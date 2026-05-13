@@ -1,1 +1,6 @@
-from .TrackSimulator import simulateLinearTrack, simulateLinearTrackPolar
+from .TrackSimulator import (
+    simulateLinearTrack,
+    simulateLinearTrackPolar,
+    simulateRandomAccelTrackPolar,
+    simulateRandomAccelHoverTrackPolar,
+)

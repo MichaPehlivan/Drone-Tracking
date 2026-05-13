@@ -16,6 +16,8 @@ from stonesoup.types.array import StateVector
 This function calculates the average OSPA distance for a single track using the stonesoup library.
 
 """
+
+
 def get_average_ospa(x_history, trueTrack):
 
     ospa_calc = OSPAMetric(p=1, c=10.0)
@@ -32,6 +34,5 @@ def get_average_ospa(x_history, trueTrack):
         ospa_values.append(distance.value)
 
     average_ospa = np.mean(ospa_values)
-
 
     return average_ospa
