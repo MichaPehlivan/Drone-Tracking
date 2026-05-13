@@ -27,6 +27,10 @@ Simulated measurements [Linear]
   -https://ieeexplore-ieee-org.tudelft.idm.oclc.org/stamp/stamp.jsp?tp=&arnumber=5744132&tag=1 <br>
   Stone soup documentation:<br>
   -https://stonesoup.readthedocs.io/en/v0.1b4/stonesoup.metricgenerator.ospametric.html <br>
+
+  Interacting Multiple Model (IMM): <br>
+  -https://secwww.jhuapl.edu/techdigest/Content/techdigest/pdf/V22-N04/22-04-Genovese.pdf <br>
+  -https://www.mdpi.com/2076-3417/16/5/2377 <br>
   
 
 ## Changes/Notes:
