@@ -184,7 +184,6 @@ def simulateRandomAccelHoverTrackPolar(
         curr_x += curr_vx * dt
         curr_y += curr_vy * dt
 
-        # Save and Measure
         trueTrack[:, i] = [curr_x, curr_y]
         r = np.sqrt(curr_x**2 + curr_y**2)
         phi = np.arctan2(curr_y, curr_x)
