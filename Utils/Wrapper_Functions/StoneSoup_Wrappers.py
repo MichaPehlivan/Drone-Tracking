@@ -10,33 +10,83 @@ from stonesoup.models.measurement.nonlinear import CartesianToBearingRange
 from datetime import datetime, timedelta
 from stonesoup.types.prediction import GaussianStatePrediction
 from stonesoup.types.update import GaussianStateUpdate
+from stonesoup.base import Property
 import numpy as np
+from stonesoup.models.transition import TransitionModel
 
 
-class MyUKFPredictor(Predictor):
-    def predict(self, prior, timestamp, **kwargs):
-        # 1. Instantiate your UKF using the parameters stored in the model
-        # We assume your transition function 'f' is stored in self.transition_model
-        ukf = UnscentedKalmanFilter(
-            f=self.transition_model.function,
-            h=None, Q=self.transition_model.covar(), R=None,
-            x0=prior.state_vector, P0=prior.covar,
-            alpha=2, beta=2, kappa=0  # Use your tuned params here
+class UKFPredictor(Predictor):
+    #inherits the properties of the Predictor class (which I want to emulate)
+    ukf: object = Property()
+    #Automatically creates an __init__ with magic syntax and stonesoup magic :0
+
+    transition_model: TransitionModel = Property(default=None)
+
+    #deze ook verplicht for some reason, gebruiken hem verder niet
+
+    def predict(self, prior, timestamp=None, **kwargs):
+
+        self.ukf.x = np.array(prior.mean).flatten()
+        self.ukf.P = np.array(prior.covar)
+
+        x_pred, sigma_points = self.ukf.predict()
+
+        return GaussianStatePrediction(
+            state_vector=x_pred.reshape(-1, 1),
+            covar=self.ukf.P,
+            timestamp=timestamp,
         )
 
-        # 2. Call your existing logic
-        pred_x, _ = ukf.predict()
+class UKFUpdater(Updater):
 
-        # 3. Return the Stone Soup object
-        return GaussianStatePrediction(pred_x, ukf.P, timestamp=timestamp)
+    ukf: object = Property()
+
+    measurement_model: object = Property(default=None)
+
+    def update(self, hypothesis, **kwargs):
+
+        prediction = hypothesis.prediction
+        measurement = hypothesis.measurement
+
+        # Sync UKF with the predicted state
+        self.ukf.x = np.array(prediction.mean).flatten()
+        self.ukf.P = np.array(prediction.covar)
+
+        # Extract measurement vector
+        z = np.array(measurement.state_vector).flatten()
+
+        # Recompute sigma points from current predicted state
+        sigma_points = self.ukf.generate_sigma_points(self.ukf.x, self.ukf.P)
+
+        x_updated = self.ukf.update(sigma_points, z)
+
+        return GaussianStateUpdate(
+            state_vector=x_updated.reshape(-1, 1),
+            covar=self.ukf.P,
+            hypothesis=hypothesis,
+            timestamp=measurement.timestamp,
+        )
+
+    def predict_measurement(self, predicted_state, measurement_model=None, **kwargs):
+
+        self.ukf.x = np.array(predicted_state.mean).flatten()
+        self.ukf.P = np.array(predicted_state.covar)
+
+        sigma_points = self.ukf.generate_sigma_points(self.ukf.x, self.ukf.P)
+        y = np.array([self.ukf.h(s).flatten() for s in sigma_points])
+        y_mean = self.ukf.calculate_polar_mean(y)
+
+        return y_mean.reshape(-1, 1)
+
 
 
 def SimulatorPolar_stonesoup(**kwargs):
 
-    start_time = datetime.now()
+    start_time = kwargs.pop("start_time")
     sim_function = kwargs.pop('sim_function', simulateRandomAccelTrackPolar)
-    dt = kwargs.get('dt')
     measurement_model = kwargs.pop("measurement_model")
+
+    dt = kwargs.get('dt')
 
     measurements, true_track = sim_function(**kwargs)
 

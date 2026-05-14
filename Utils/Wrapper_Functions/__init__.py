@@ -1,1 +1,4 @@
-from .StoneSoup_Wrappers import SimulatorPolar_stonesoup
+from .StoneSoup_Wrappers import (SimulatorPolar_stonesoup,
+                                    UKFPredictor,
+                                    UKFUpdater
+                                 )

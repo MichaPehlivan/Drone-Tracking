@@ -1,1 +1,1 @@
-from .Single_Target_Evaluation import get_average_ospa
+from .Single_Target_Evaluation import get_average_ospa, average_ospa_stonesoup

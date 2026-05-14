@@ -119,9 +119,12 @@ class UnscentedKalmanFilter:
         x0: Initial state estimate
             state vector:
                 |    x         |
+                |    vx         |
+                |    ax         |
                 |    y         |
-                |  x_dot (vx)  |
-                |_ y_dot (vy) _|
+                |    vy         |
+                |    ay         |
+
         Q: Process noise covariance (uncertainty in the process)  TODO: figure out appropriate values 2
         P0: Initial Error covariance (needs to be a large value)
         alpha: scaling parameter
@@ -154,11 +157,12 @@ class UnscentedKalmanFilter:
     # calculate mean while normalizing angle
     def calculate_polar_mean(self, y):
         y_mean = np.zeros(2)
-        y_mean[0] = np.dot(self.wm, y[:, 0])
 
-        sum_sin = np.sum(self.wm * np.sin(y[:, 1]))
-        sum_cos = np.sum(self.wm * np.cos(y[:, 1]))
-        y_mean[1] = np.arctan2(sum_sin, sum_cos)
+        sum_sin = np.sum(self.wm * np.sin(y[:, 0]))
+        sum_cos = np.sum(self.wm * np.cos(y[:, 0]))
+        y_mean[0] = np.arctan2(sum_sin, sum_cos)
+
+        y_mean[1] = np.dot(self.wm, y[:, 1])
 
         return y_mean
 
@@ -221,7 +225,7 @@ class UnscentedKalmanFilter:
 
         # compute residuals
         dy = y - y_mean
-        dy[:, 1] = self.normalize_angle(dy[:, 1])
+        dy[:, 0] = self.normalize_angle(dy[:, 0])
         dx = transformed_sigma_points - self.x
 
         # estimate covariances
@@ -232,7 +236,7 @@ class UnscentedKalmanFilter:
         K = np.dot(Pxy, np.linalg.inv(Pyy))
 
         S = z - y_mean
-        S[1] = self.normalize_angle(S[1])
+        S[0] = self.normalize_angle(S[0])
 
         self.x = self.x + np.dot(K, S)
         self.P = self.P - np.dot(np.dot(K, Pyy), K.T)
