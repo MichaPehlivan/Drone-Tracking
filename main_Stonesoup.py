@@ -1,6 +1,6 @@
 # External Imports
 import numpy as np
-
+import matplotlib.pyplot as plt
 # Internal Packages
 from Track_Simulation import (
     simulateLinearTrack,
@@ -16,8 +16,11 @@ from Tracking_Routines import (
 )
 from Utils import animate_track
 from Utils.KalmanTuner import TuneEKF, TuneUKF
-from Utils.Wrapper_Functions import RandomAccelHoverTrackPolar_stonesoup
-# EXTENDED KALMAN FILTER
+from Utils.Wrapper_Functions import RandomAccelHoverTrackPolar_stonesoup, RandomAccelTrackPolar_stonesoup
+
+from stonesoup.plotter import Plotter
+from stonesoup.models.measurement.nonlinear import CartesianToBearingRange
+
 # Initialize values
 dt = 0.4
 x_initial = 5
@@ -41,6 +44,7 @@ f = lambda x: np.dot(
     ),
     x,
 )
+
 F = lambda x: np.array(
     [
         [1, 0, dt, 0, 0, 0],
@@ -57,6 +61,7 @@ H_cartesian = lambda x: np.array([[1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0]])
 h_polar = lambda x: np.array(
     [[np.sqrt(x[0] ** 2 + x[1] ** 2)], [np.arctan2(x[1], x[0])]]
 )  # conversion to polar
+
 H_polar = lambda x: np.array(
     [
         [
@@ -78,7 +83,6 @@ H_polar = lambda x: np.array(
     ]
 )
 
-# TODO: Find appropriate covariance matrices.
 Q = 0.1 * np.eye(6)
 
 R = 1 * np.array([[var, 0], [0, var]])
@@ -87,46 +91,20 @@ x0 = np.array([[x_initial], [y_initial], [1], [1], [1], [1]])
 
 P0 = 0.0001 * np.eye(6)
 
-# # Run with no noise
-# range_sigma = 0
-# azimuth_sigma = np.deg2rad(0)
-# var_r = range_sigma**2
-# var_phi = azimuth_sigma**2
-# R = 1 * np.array([[var_r, 0], [0, var_phi]])
-# measurements, trueTrack = simulateRandomAccelTrackPolar(
-#     v_x=1,
-#     v_y=1,
-#     x0=x_initial,
-#     y0=y_initial,
-#     num_datapoints=num_datapoints,
-#     dt=dt,
-#     sigma_r=range_sigma,
-#     sigma_phi=azimuth_sigma,
-# )
-
-# animate_track(trueTrack, dt=dt)
-# RunJointKalman(
-#     f, h_polar, F, H_polar, Q, R, x0, P0, 0.01, 2, 0, measurements, trueTrack
-# )
-
-# Another with low sigma
 range_sigma = 1
 azimuth_sigma = np.deg2rad(3)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
 R = 1 * np.array([[var_r, 0], [0, var_phi]])
-#
-# measurements, trueTrack = simulateRandomAccelTrackPolar(
-#     v_x=1,
-#     v_y=1,
-#     x0=x_initial,
-#     y0=y_initial,
-#     num_datapoints=num_datapoints,
-#     dt=dt,
-#     sigma_r=range_sigma,
-#     sigma_phi=azimuth_sigma
-# )
-detections = RandomAccelHoverTrackPolar_stonesoup(v_x=1,
+
+#Define measurement_model
+measurement_model = CartesianToBearingRange(
+        ndim_state=6,
+        mapping=(0, 3),
+        noise_covar=R
+)
+
+detections = RandomAccelTrackPolar_stonesoup(measurement_model=measurement_model, v_x=1,
     v_y=1,
     x0=x_initial,
     y0=y_initial,
@@ -135,34 +113,17 @@ detections = RandomAccelHoverTrackPolar_stonesoup(v_x=1,
     sigma_r=range_sigma,
     sigma_phi=azimuth_sigma
 )
+fig = plt.figure()
+ax = fig.add_subplot(projection='polar')
+for detection_set in detections:
+    for det in detection_set:
+        c = ax.scatter(det.state_vector[1],det.state_vector[0], c="blue", cmap='hsv', alpha=0.75)
 
-
-
-# animate_track(trueTrack, dt=dt)
-# RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 2, 2, 0, measurements, trueTrack)
-# TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, measurements, trueTrack, 10)
-# TuneUKF(f, h_polar, x0, var_r, var_phi, 2, 0, measurements, trueTrack, 10)
-
-# # Another with high sigma
-# range_sigma = 10
-# azimuth_sigma = np.deg2rad(5)
-# var_r = range_sigma**2
-# var_phi = azimuth_sigma**2
-# R = 1 * np.array([[var_r, 0], [0, var_phi]])
-# measurements, trueTrack = simulateRandomAccelTrackPolar(
-#     v_x=1,
-#     v_y=1,
-#     x0=x_initial,
-#     y0=y_initial,
-#     num_datapoints=num_datapoints,
-#     dt=dt,
-#     sigma_r=range_sigma,
-#     sigma_phi=azimuth_sigma,
-# )
-
-# animate_track(trueTrack, dt=dt)
-# RunJointKalman(
-#     f, h_polar, F, H_polar, Q, R, x0, P0, 0.01, 2, 0, measurements, trueTrack
-# )
-# TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, measurements, trueTrack)
-# TuneUKF(f, h_polar, x0, var_r, var_phi, 2, 0, measurements, trueTrack)
+plt.show()
+# plotter.plot_detections(detections, marker='o', color='blue', mapping=(0, 1))
+#
+# # Optional: Label your axes so it's clear this isn't a map
+# import matplotlib.pyplot as plt
+# plt.xlabel("Bearing (radians)")
+# plt.ylabel("Range (meters)")
+# plotter.show()
