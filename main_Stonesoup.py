@@ -2,36 +2,33 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
+
 # Internal Packages
+from Evaluation_Metrics import average_ospa_stonesoup
+from Kalman_Filters import UnscentedKalmanFilter
+from Utils.KalmanTuner import TuneEKF, TuneUKF
 from Track_Simulation import (
     simulateLinearTrack,
     simulateLinearTrackPolar,
     simulateRandomAccelTrackPolar,
     simulateRandomAccelHoverTrackPolar,
 )
-from Tracking_Routines import (
-    RunSimpleKalman,
-    RunExtendedKalman,
-    RunUnscentedKalman,
-    RunJointKalman,
+from Utils.Wrapper_Functions import (
+    SimulatorPolar_stonesoup,
+    UKFUpdater,
+    UKFPredictor
 )
-from Kalman_Filters import UnscentedKalmanFilter
-from Utils import animate_track
-from Utils.KalmanTuner import TuneEKF, TuneUKF
-from Utils.Wrapper_Functions import (SimulatorPolar_stonesoup,
-                                     UKFUpdater,
-                                     UKFPredictor)
 
-from Evaluation_Metrics import average_ospa_stonesoup
-
-
-
-from stonesoup.plotter import Plotter
+#Stonesoup imports
 from stonesoup.models.measurement.nonlinear import CartesianToBearingRange
+
 from stonesoup.types.state import GaussianState
 from stonesoup.types.hypothesis import SingleHypothesis
 from stonesoup.types.track import Track
-from stonesoup.models.transition.linear import ConstantVelocity
+
+from stonesoup.plotter import Plotter
+
+
 
 # Initialize values
 dt = 0.4

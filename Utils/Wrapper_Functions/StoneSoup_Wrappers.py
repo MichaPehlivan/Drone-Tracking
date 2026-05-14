@@ -1,18 +1,22 @@
+#External imports
+import numpy as np
+from datetime import datetime, timedelta
+
+#Predictor and updater for Kalman filter
 from stonesoup.predictor.base import Predictor
 from stonesoup.updater.base import Updater
-from stonesoup.types.state import GaussianState
+
+#Stonesoup types
 from stonesoup.types.detection import Detection
 from stonesoup.types.groundtruth import GroundTruthPath
 from stonesoup.types.state import State
 from stonesoup.types.array import StateVector
-from Track_Simulation import simulateRandomAccelHoverTrackPolar, simulateRandomAccelTrackPolar
-from stonesoup.models.measurement.nonlinear import CartesianToBearingRange
-from datetime import datetime, timedelta
 from stonesoup.types.prediction import GaussianStatePrediction
 from stonesoup.types.update import GaussianStateUpdate
+
 from stonesoup.base import Property
-import numpy as np
 from stonesoup.models.transition import TransitionModel
+
 
 
 class UKFPredictor(Predictor):
@@ -83,7 +87,7 @@ class UKFUpdater(Updater):
 def SimulatorPolar_stonesoup(**kwargs):
 
     start_time = kwargs.pop("start_time")
-    sim_function = kwargs.pop('sim_function', simulateRandomAccelTrackPolar)
+    sim_function = kwargs.pop('sim_function')
     measurement_model = kwargs.pop("measurement_model")
 
     dt = kwargs.get('dt')
