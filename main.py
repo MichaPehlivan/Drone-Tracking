@@ -17,6 +17,7 @@ from Tracking_Routines import (
 from Utils import animate_track
 from Utils.KalmanTuner import TuneEKF, TuneUKF
 from Utils.Wrapper_Functions import RandomAccelHoverTrackPolar_stonesoup
+
 # EXTENDED KALMAN FILTER
 # Initialize values
 dt = 0.4
@@ -126,16 +127,16 @@ R = 1 * np.array([[var_r, 0], [0, var_phi]])
 #     sigma_r=range_sigma,
 #     sigma_phi=azimuth_sigma
 # )
-detections = RandomAccelHoverTrackPolar_stonesoup(v_x=1,
+detections = RandomAccelHoverTrackPolar_stonesoup(
+    v_x=1,
     v_y=1,
     x0=x_initial,
     y0=y_initial,
     num_datapoints=num_datapoints,
     dt=dt,
     sigma_r=range_sigma,
-    sigma_phi=azimuth_sigma
+    sigma_phi=azimuth_sigma,
 )
-
 
 
 # animate_track(trueTrack, dt=dt)
