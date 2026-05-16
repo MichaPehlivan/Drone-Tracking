@@ -114,7 +114,7 @@ measurement_model = CartesianToBearingRange(
 start_time = datetime.now()
 
 shared_config = {
-    "sim_function": simulateRandomAccelTrackPolar,
+    "sim_function": simulateLinearTrackPolar,
     "start_time": start_time,
     "measurement_model": measurement_model,
     "num_datapoints": num_datapoints,
@@ -135,13 +135,6 @@ drones_params = [
         "y0": y_initial,
         "v_x": -5,
         "v_y": 5
-    },
-    {
-        "x0": x_initial + 100,
-        "y0": y_initial + 70,
-        "v_x": -5,
-        "v_y": 1,
-        "delay_steps" : 10
     }
 ]
 
@@ -175,7 +168,7 @@ initiator = MultiMeasurementInitiator(
     deleter=deleter,
     data_associator=data_associator,
     updater=updater,
-    min_points=4
+    min_points=2
 )
 
 
@@ -199,9 +192,8 @@ initiator = MultiMeasurementInitiator(
 
 tracks, all_tracks = set(), set()
 timesteps = []
-
 for n, measurements in enumerate(detections):
-
+    # Calculate all hypothesis pairs and associate the elements in the best subset to the tracks.
     timestamp = start_time + timedelta(seconds=dt*n)
     timesteps.append(timestamp)
     hypotheses = data_associator.associate(tracks,
@@ -258,10 +250,8 @@ plt.grid()
 plotter.fig.show()
 plt.show()
 
-from stonesoup.plotter import AnimatedPlotterly
-plotter = AnimatedPlotterly(timesteps, tail_length=0.3)
-
-plotter.plot_tracks(all_tracks, [0, 3], uncertainty=True)
-plotter.plot_ground_truths(ground_truths, [0, 3])
-plotter.plot_measurements(detections, [0, 3])
-plotter.fig.show()
+# from stonesoup.plotter import AnimatedPlotterly
+# plotter = AnimatedPlotterly(timesteps, tail_length=0.3)
+#
+# plotter.plot_tracks(all_tracks, [0, 3], uncertainty=True)
+# plotter.fig.show()
