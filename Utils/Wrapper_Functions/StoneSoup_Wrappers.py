@@ -131,6 +131,7 @@ def SimulatorPolar_stonesoup(**kwargs):
 
     return all_detections, ground_truth
 
+
 def SimulatorPolarMultitarget_stonesoup(**kwargs):
     start_time = kwargs.pop("start_time")
     sim_function = kwargs.pop('sim_function')
@@ -140,8 +141,12 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
     drone_configs = kwargs.pop("drone_configs", [{}, {}])  # Defaults to two empty drones
     measurements_list = []
     true_tracks_list = []
+    delays_list = []
 
     for config in drone_configs:
+
+        delay_steps = config.pop("delay_steps", 0)
+        delays_list.append(delay_steps)
 
         combined_config = kwargs | config
 
@@ -160,24 +165,31 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
         timestamp = start_time + timedelta(seconds=i * dt)
         time_step_detections = set()
 
-        for d_idx in range(num_drones):
-            meas = measurements_list[d_idx]
-            track = true_tracks_list[d_idx]
-            det = Detection(
-                state_vector=StateVector([meas[1, i], meas[0, i]]),
-                timestamp=timestamp,
-                measurement_model=measurement_model
-            )
-            time_step_detections.add(det)
+        for drone in range(num_drones):
+            meas = measurements_list[drone]
+            track = true_tracks_list[drone]
+            delay = delays_list[drone]
 
-            x_true = track[0, i]
-            y_true = track[1, i]
+            local_i = i - delay
 
-            truth_state = State(
-                state_vector=StateVector([x_true, 0, 0, y_true, 0, 0]),
-                timestamp=timestamp
-            )
-            ground_truths[d_idx].append(truth_state)
+            if 0 <= local_i < meas.shape[1]:
+
+                det = Detection(
+                    state_vector=StateVector([meas[1, local_i], meas[0, local_i]]),
+                    timestamp=timestamp,
+                    measurement_model=measurement_model
+                )
+                time_step_detections.add(det)
+
+                x_true = track[0, local_i]
+                y_true = track[1, local_i]
+
+                truth_state = State(
+                    state_vector=StateVector([x_true, 0, 0, y_true, 0, 0]),
+                    timestamp=timestamp
+                )
+                ground_truths[drone].append(truth_state)
+
 
         all_detections.append(time_step_detections)
 
