@@ -15,6 +15,7 @@ from Track_Simulation import (
 )
 from Utils.Wrapper_Functions import (
     SimulatorPolar_stonesoup,
+    SimulatorPolarMultitarget_stonesoup,
     UKFUpdater,
     UKFPredictor
 )
@@ -28,7 +29,7 @@ from stonesoup.types.track import Track
 
 from stonesoup.plotter import Plotter
 
-
+from Utils.Wrapper_Functions.StoneSoup_Wrappers import SimulatorPolarMultitarget_stonesoup
 
 # Initialize values
 dt = 0.4
@@ -85,7 +86,7 @@ H_polar = lambda x: np.array(
     ]
 )
 
-Q = 0.1 * np.eye(6)
+Q = 0.01 * np.eye(6)
 # Qblock = 0.1 * np.array([
 #     [dt**5/20, dt**4/8, dt**3/6],
 #     [dt**4/8,  dt**3/3, dt**2/2],
@@ -96,14 +97,14 @@ Q = 0.1 * np.eye(6)
 # Q[0:3, 0:3] = Qblock
 # Q[3:6, 3:6] = Qblock
 
-np.random.seed(30)
+# np.random.seed(30)
 
 x0 = np.array([[x_initial], [1], [0], [y_initial], [1], [0]])
-
-P0 = 1 * np.eye(6)
+# Constant acceleration (CA)
+P0 = 10 * np.eye(6)
 
 range_sigma = 1
-azimuth_sigma = np.deg2rad(5)
+azimuth_sigma = np.deg2rad(3)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
 
@@ -121,8 +122,8 @@ timestamp = datetime.datetime.now()
 detections, ground_truth = SimulatorPolar_stonesoup(
     sim_function = simulateRandomAccelTrackPolar,
     start_time = timestamp,
-    measurement_model=measurement_model, v_x=1,
-    v_y=1,
+    measurement_model=measurement_model, v_x=5,
+    v_y=5,
     x0=x_initial,
     y0=y_initial,
     num_datapoints=num_datapoints,
@@ -172,6 +173,8 @@ for detection_set in detections:
 
         prior = posterior
 
+
+
 avg_ospa = average_ospa_stonesoup(track = track, ground_truth=ground_truth)
 
 plotter = Plotter()
@@ -187,6 +190,16 @@ plt.text(0.05, 0.95, f"Average OSPA: {avg_ospa:.2f}m",
          fontsize=12,
          verticalalignment='top',
          bbox=dict(boxstyle='round', facecolor='white', alpha=0.5))
+
+ax = plt.gca()
+x_min, x_max = ax.get_xlim()
+y_min, y_max = ax.get_ylim()
+data_min = min(x_min, y_min)
+data_max = max(x_max, y_max)
+ax.set_xlim(data_min, data_max)
+ax.set_ylim(data_min, data_max)
+ax.set_aspect('equal', adjustable='box')
+
 plt.grid()
 plotter.fig.show()
 plt.show()

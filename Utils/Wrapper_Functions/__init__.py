@@ -1,4 +1,6 @@
 from .StoneSoup_Wrappers import (SimulatorPolar_stonesoup,
-                                    UKFPredictor,
-                                    UKFUpdater
+                                SimulatorPolarMultitarget_stonesoup,
+                                UKFPredictor,
+                                UKFUpdater,
+                                CustomDistanceMeasure
                                  )

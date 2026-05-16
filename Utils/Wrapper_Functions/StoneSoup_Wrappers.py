@@ -25,7 +25,6 @@ class UKFPredictor(Predictor):
     #Automatically creates an __init__ with magic syntax and stonesoup magic :0
 
     transition_model: TransitionModel = Property(default=None)
-
     #deze ook verplicht for some reason, gebruiken hem verder niet
 
     def predict(self, prior, timestamp=None, **kwargs):
@@ -40,6 +39,8 @@ class UKFPredictor(Predictor):
             covar=self.ukf.P,
             timestamp=timestamp,
         )
+
+
 
 class UKFUpdater(Updater):
 
@@ -82,6 +83,16 @@ class UKFUpdater(Updater):
 
         return y_mean.reshape(-1, 1)
 
+class CustomDistanceMeasure:
+    def __call__(self, state1, state2):
+
+        vec1 = getattr(state1, 'state_vector', state1)
+        vec2 = getattr(state2, 'state_vector', state2)
+
+        v1 = np.asarray(vec1).flatten()
+        v2 = np.asarray(vec2).flatten()
+        return np.linalg.norm(v1 - v2)
+
 
 
 def SimulatorPolar_stonesoup(**kwargs):
@@ -119,6 +130,58 @@ def SimulatorPolar_stonesoup(**kwargs):
         ground_truth.append(truth_state)
 
     return all_detections, ground_truth
+
+def SimulatorPolarMultitarget_stonesoup(**kwargs):
+    start_time = kwargs.pop("start_time")
+    sim_function = kwargs.pop('sim_function')
+    measurement_model = kwargs.pop("measurement_model")
+    dt = kwargs.get('dt')
+
+    drone_configs = kwargs.pop("drone_configs", [{}, {}])  # Defaults to two empty drones
+    measurements_list = []
+    true_tracks_list = []
+
+    for config in drone_configs:
+
+        combined_config = kwargs | config
+
+        meas, track = sim_function(**combined_config)
+
+        measurements_list.append(meas)
+        true_tracks_list.append(track)
+
+    num_drones = len(drone_configs)
+    num_time_steps = measurements_list[0].shape[1]
+
+    all_detections = []
+    ground_truths = [GroundTruthPath() for _ in range(num_drones)]
+
+    for i in range(num_time_steps):
+        timestamp = start_time + timedelta(seconds=i * dt)
+        time_step_detections = set()
+
+        for d_idx in range(num_drones):
+            meas = measurements_list[d_idx]
+            track = true_tracks_list[d_idx]
+            det = Detection(
+                state_vector=StateVector([meas[1, i], meas[0, i]]),
+                timestamp=timestamp,
+                measurement_model=measurement_model
+            )
+            time_step_detections.add(det)
+
+            x_true = track[0, i]
+            y_true = track[1, i]
+
+            truth_state = State(
+                state_vector=StateVector([x_true, 0, 0, y_true, 0, 0]),
+                timestamp=timestamp
+            )
+            ground_truths[d_idx].append(truth_state)
+
+        all_detections.append(time_step_detections)
+
+    return all_detections, ground_truths
 
 
 
