@@ -121,7 +121,8 @@ shared_config = {
     "num_datapoints": num_datapoints,
     "dt": dt,
     "sigma_r": range_sigma,
-    "sigma_phi": azimuth_sigma
+    "sigma_phi": azimuth_sigma,
+    "add_clutter" : True
 }
 
 drones_params = [
@@ -163,8 +164,8 @@ prior = GaussianState(
 hypothesiser = DistanceHypothesiser(
     predictor,
     updater,
-    measure=CustomDistanceMeasure(),
-    missed_distance=5.0
+    measure=Mahalanobis(),
+    missed_distance=5
 )
 
 data_associator = GlobalNearestNeighbour(hypothesiser)

@@ -10,13 +10,13 @@ from stonesoup.updater.base import Updater
 from stonesoup.types.detection import Detection
 from stonesoup.types.groundtruth import GroundTruthPath
 from stonesoup.types.state import State
-from stonesoup.types.array import StateVector
+from stonesoup.types.array import StateVector, CovarianceMatrix
 from stonesoup.types.prediction import GaussianStatePrediction
 from stonesoup.types.update import GaussianStateUpdate
 
 from stonesoup.base import Property
 from stonesoup.models.transition import TransitionModel
-
+from stonesoup.types.prediction import GaussianMeasurementPrediction
 
 
 class UKFPredictor(Predictor):
@@ -35,8 +35,8 @@ class UKFPredictor(Predictor):
         x_pred, sigma_points = self.ukf.predict()
 
         return GaussianStatePrediction(
-            state_vector=x_pred.reshape(-1, 1),
-            covar=self.ukf.P,
+            state_vector=StateVector(x_pred.reshape(-1,1)),
+            covar=CovarianceMatrix(self.ukf.P),
             timestamp=timestamp,
         )
 
@@ -66,8 +66,8 @@ class UKFUpdater(Updater):
         x_updated = self.ukf.update(sigma_points, z)
 
         return GaussianStateUpdate(
-            state_vector=x_updated.reshape(-1, 1),
-            covar=self.ukf.P,
+            state_vector=StateVector(x_updated.reshape(-1, 1)),
+            covar=CovarianceMatrix(self.ukf.P),
             hypothesis=hypothesis,
             timestamp=measurement.timestamp,
         )
@@ -81,7 +81,21 @@ class UKFUpdater(Updater):
         y = np.array([self.ukf.h(s).flatten() for s in sigma_points])
         y_mean = self.ukf.calculate_polar_mean(y)
 
-        return y_mean.reshape(-1, 1)
+        weights = self.ukf.wm
+        y_diff = y - y_mean
+        S = np.zeros((y_mean.shape[0], y_mean.shape[0]))
+
+        for idx in range(len(sigma_points)):
+            S += weights[idx] * np.outer(y_diff[idx], y_diff[idx])
+        S += self.ukf.R
+
+        #Covariance matrix necessary for the Mahalanobis distance measure, wanted to try it
+        #TODO: justify why this is the right covariance matrix, just same as error matrix x-xhat except scaled with weights.
+        return GaussianMeasurementPrediction(
+            state_vector=StateVector(y_mean.reshape(-1, 1)),
+            covar=CovarianceMatrix(S),
+            timestamp=predicted_state.timestamp
+        )
 
 class CustomDistanceMeasure:
     def __call__(self, state1, state2):
@@ -133,6 +147,7 @@ def SimulatorPolar_stonesoup(**kwargs):
 
 
 def SimulatorPolarMultitarget_stonesoup(**kwargs):
+    add_clutter = kwargs.pop("add_clutter", False)
     start_time = kwargs.pop("start_time")
     sim_function = kwargs.pop('sim_function')
     measurement_model = kwargs.pop("measurement_model")
@@ -180,6 +195,21 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
                     measurement_model=measurement_model
                 )
                 time_step_detections.add(det)
+
+                if add_clutter:
+                    clutter_chance = 0.2
+                    if np.random.uniform(0,1) < clutter_chance:
+
+                        rand_x = np.random.uniform(-30,150)
+                        rand_y = np.random.uniform(-30,150)
+                        rand_phi = np.arctan2(rand_y,rand_x)
+                        rand_R = np.sqrt(rand_x**2 + rand_y**2)
+                        det = Detection(
+                            state_vector=StateVector([rand_phi, rand_R]),
+                            timestamp=timestamp,
+                            measurement_model=measurement_model
+                        )
+                        time_step_detections.add(det)
 
                 x_true = track[0, local_i]
                 y_true = track[1, local_i]
