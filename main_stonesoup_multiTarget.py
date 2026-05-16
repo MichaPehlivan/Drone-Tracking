@@ -17,7 +17,7 @@ from Utils.Wrapper_Functions import (
     SimulatorPolarMultitarget_stonesoup,
     UKFUpdater,
     UKFPredictor,
-    CustomDistanceMeasure
+    # CustomDistanceMeasure
 )
 
 #Stonesoup imports
@@ -42,7 +42,7 @@ dt = 0.4
 x_initial = 5
 y_initial = 5
 
-num_datapoints = 50
+num_datapoints = 100
 
 # Initialize the functions and matrices for the Kalman filter.
 f = lambda x: np.dot(np.array([
@@ -144,6 +144,20 @@ drones_params = [
         "v_x": -5,
         "v_y": 1,
         "delay_steps" : 10
+    },
+    {
+        "x0": x_initial + 150,
+        "y0": y_initial + 70,
+        "v_x": 1,
+        "v_y": 4,
+        "delay_steps" : 50
+    },
+    {
+        "x0": x_initial + 30,
+        "y0": y_initial + 90,
+        "v_x": 0,
+        "v_y": -4,
+        "delay_steps" : 30
     }
 ]
 
@@ -217,14 +231,16 @@ for n, measurements in enumerate(detections):
         if hypothesis.measurement:
             post = updater.update(hypothesis)
             track.append(post)
+
             associated_measurements.add(hypothesis.measurement)
-        else:  # When data associator says no detections are good enough, we'll keep the prediction
+
+        else:
             track.append(hypothesis.prediction)
 
-    # Carry out deletion and initiation
+
     tracks -= deleter.delete_tracks(tracks)
     tracks |= initiator.initiate(measurements - associated_measurements,
-                                 start_time + timedelta(seconds=n))
+                                 start_time + timedelta(seconds=dt*n))
     all_tracks |= tracks
 
 
@@ -261,9 +277,9 @@ plotter.fig.show()
 plt.show()
 
 from stonesoup.plotter import AnimatedPlotterly
-plotter = AnimatedPlotterly(timesteps, tail_length=0.3)
+plotter = AnimatedPlotterly(timesteps, tail_length=1)
 
 plotter.plot_tracks(all_tracks, [0, 3], uncertainty=True)
 plotter.plot_ground_truths(ground_truths, [0, 3])
-plotter.plot_measurements(detections, [0, 3])
+# plotter.plot_measurements(detections, [0, 3])
 plotter.fig.show()

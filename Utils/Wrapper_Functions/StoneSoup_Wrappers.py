@@ -97,6 +97,7 @@ class UKFUpdater(Updater):
             timestamp=predicted_state.timestamp
         )
 
+""" 
 class CustomDistanceMeasure:
     def __call__(self, state1, state2):
 
@@ -106,7 +107,7 @@ class CustomDistanceMeasure:
         v1 = np.asarray(vec1).flatten()
         v2 = np.asarray(vec2).flatten()
         return np.linalg.norm(v1 - v2)
-
+"""
 
 
 def SimulatorPolar_stonesoup(**kwargs):
