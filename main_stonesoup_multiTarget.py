@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 # Internal Packages
-from Evaluation_Metrics import average_ospa_stonesoup
+from Evaluation_Metrics import ospa_stonesoup
 from Kalman_Filters import UnscentedKalmanFilter
 from Utils.KalmanTuner import TuneEKF, TuneUKF
 from Track_Simulation import (
@@ -27,6 +27,7 @@ from stonesoup.types.state import GaussianState
 from stonesoup.types.hypothesis import SingleHypothesis
 from stonesoup.types.track import Track
 from stonesoup.dataassociator.neighbour import GlobalNearestNeighbour
+from stonesoup.dataassociator.probability import JPDA
 from stonesoup.deleter.time import UpdateTimeStepsDeleter
 from stonesoup.deleter.error import CovarianceBasedDeleter
 from stonesoup.initiator.simple import MultiMeasurementInitiator
@@ -228,7 +229,7 @@ for n, measurements in enumerate(detections):
 
 
 
-# avg_ospa = average_ospa_stonesoup(track = track, ground_truth=ground_truth)
+ospa_stonesoup(track = all_tracks, ground_truth=ground_truths)
 
 # Plotting
 plotter = Plotter()
