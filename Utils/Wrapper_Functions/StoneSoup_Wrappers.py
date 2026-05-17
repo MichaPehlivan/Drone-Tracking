@@ -1,12 +1,12 @@
-#External imports
+# External imports
 import numpy as np
 from datetime import datetime, timedelta
 
-#Predictor and updater for Kalman filter
+# Predictor and updater for Kalman filter
 from stonesoup.predictor.base import Predictor
 from stonesoup.updater.base import Updater
 
-#Stonesoup types
+# Stonesoup types
 from stonesoup.types.detection import Detection
 from stonesoup.types.groundtruth import GroundTruthPath
 from stonesoup.types.state import State
@@ -20,26 +20,25 @@ from stonesoup.types.prediction import GaussianMeasurementPrediction
 
 
 class UKFPredictor(Predictor):
-    #inherits the properties of the Predictor class (which I want to emulate)
+    # inherits the properties of the Predictor class (which I want to emulate)
     ukf: object = Property()
-    #Automatically creates an __init__ with magic syntax and stonesoup magic :0
+    # Automatically creates an __init__ with magic syntax and stonesoup magic :0
 
     transition_model: TransitionModel = Property(default=None)
-    #deze ook verplicht for some reason, gebruiken hem verder niet
+    # deze ook verplicht for some reason, gebruiken hem verder niet
 
     def predict(self, prior, timestamp=None, **kwargs):
 
         self.ukf.x = np.array(prior.mean).flatten()
         self.ukf.P = np.array(prior.covar)
 
-        x_pred, sigma_points = self.ukf.predict()
+        x_pred = self.ukf.predict()
 
         return GaussianStatePrediction(
-            state_vector=StateVector(x_pred.reshape(-1,1)),
+            state_vector=StateVector(x_pred.reshape(-1, 1)),
             covar=CovarianceMatrix(self.ukf.P),
             timestamp=timestamp,
         )
-
 
 
 class UKFUpdater(Updater):
@@ -60,10 +59,7 @@ class UKFUpdater(Updater):
         # Extract measurement vector
         z = np.array(measurement.state_vector).flatten()
 
-        # Recompute sigma points from current predicted state
-        sigma_points = self.ukf.generate_sigma_points(self.ukf.x, self.ukf.P)
-
-        x_updated = self.ukf.update(sigma_points, z)
+        x_updated, _, _ = self.ukf.update(z)
 
         return GaussianStateUpdate(
             state_vector=StateVector(x_updated.reshape(-1, 1)),
@@ -89,13 +85,14 @@ class UKFUpdater(Updater):
             S += weights[idx] * np.outer(y_diff[idx], y_diff[idx])
         S += self.ukf.R
 
-        #Covariance matrix necessary for the Mahalanobis distance measure, wanted to try it
-        #TODO: justify why this is the right covariance matrix, just same as error matrix x-xhat except scaled with weights.
+        # Covariance matrix necessary for the Mahalanobis distance measure, wanted to try it
+        # TODO: justify why this is the right covariance matrix, just same as error matrix x-xhat except scaled with weights.
         return GaussianMeasurementPrediction(
             state_vector=StateVector(y_mean.reshape(-1, 1)),
             covar=CovarianceMatrix(S),
-            timestamp=predicted_state.timestamp
+            timestamp=predicted_state.timestamp,
         )
+
 
 """ 
 class CustomDistanceMeasure:
@@ -113,10 +110,10 @@ class CustomDistanceMeasure:
 def SimulatorPolar_stonesoup(**kwargs):
 
     start_time = kwargs.pop("start_time")
-    sim_function = kwargs.pop('sim_function')
+    sim_function = kwargs.pop("sim_function")
     measurement_model = kwargs.pop("measurement_model")
 
-    dt = kwargs.get('dt')
+    dt = kwargs.get("dt")
 
     measurements, true_track = sim_function(**kwargs)
 
@@ -131,16 +128,17 @@ def SimulatorPolar_stonesoup(**kwargs):
 
         # Create Detection
         det = Detection(
-            state_vector=StateVector([ measurements[1,i], measurements[0,i] ]), # reverse order as stonesoup expects [phi, r] instead of r,phi
+            state_vector=StateVector(
+                [measurements[1, i], measurements[0, i]]
+            ),  # reverse order as stonesoup expects [phi, r] instead of r,phi
             timestamp=timestamp,
-            measurement_model=measurement_model
+            measurement_model=measurement_model,
         )
         all_detections.append({det})
 
         # Create Ground Truth State and add to Path
         truth_state = State(
-            state_vector=StateVector([x_true, 0, 0, y_true, 0, 0]),
-            timestamp=timestamp
+            state_vector=StateVector([x_true, 0, 0, y_true, 0, 0]), timestamp=timestamp
         )
         ground_truth.append(truth_state)
 
@@ -150,11 +148,13 @@ def SimulatorPolar_stonesoup(**kwargs):
 def SimulatorPolarMultitarget_stonesoup(**kwargs):
     add_clutter = kwargs.pop("add_clutter", False)
     start_time = kwargs.pop("start_time")
-    sim_function = kwargs.pop('sim_function')
+    sim_function = kwargs.pop("sim_function")
     measurement_model = kwargs.pop("measurement_model")
-    dt = kwargs.get('dt')
+    dt = kwargs.get("dt")
 
-    drone_configs = kwargs.pop("drone_configs", [{}, {}])  # Defaults to two empty drones
+    drone_configs = kwargs.pop(
+        "drone_configs", [{}, {}]
+    )  # Defaults to two empty drones
     measurements_list = []
     true_tracks_list = []
     delays_list = []
@@ -193,22 +193,22 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
                 det = Detection(
                     state_vector=StateVector([meas[1, local_i], meas[0, local_i]]),
                     timestamp=timestamp,
-                    measurement_model=measurement_model
+                    measurement_model=measurement_model,
                 )
                 time_step_detections.add(det)
 
                 if add_clutter:
                     clutter_chance = 0.2
-                    if np.random.uniform(0,1) < clutter_chance:
+                    if np.random.uniform(0, 1) < clutter_chance:
 
-                        rand_x = np.random.uniform(-30,150)
-                        rand_y = np.random.uniform(-30,150)
-                        rand_phi = np.arctan2(rand_y,rand_x)
+                        rand_x = np.random.uniform(-30, 150)
+                        rand_y = np.random.uniform(-30, 150)
+                        rand_phi = np.arctan2(rand_y, rand_x)
                         rand_R = np.sqrt(rand_x**2 + rand_y**2)
                         det = Detection(
                             state_vector=StateVector([rand_phi, rand_R]),
                             timestamp=timestamp,
-                            measurement_model=measurement_model
+                            measurement_model=measurement_model,
                         )
                         time_step_detections.add(det)
 
@@ -217,15 +217,13 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
 
                 truth_state = State(
                     state_vector=StateVector([x_true, 0, 0, y_true, 0, 0]),
-                    timestamp=timestamp
+                    timestamp=timestamp,
                 )
                 ground_truths[drone].append(truth_state)
-
 
         all_detections.append(time_step_detections)
 
     return all_detections, ground_truths
-
 
 
 # def RandomAccelHoverTrackPolar_stonesoup(**kwargs):
@@ -235,4 +233,4 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
 #
 #     for i in range(measurements.shape[1]):
 #         yield {Detection(StateVector(measurements[:, i]), timestamp=i*dt)}
-#^^ yield cool voor testen van de real time versie!!
+# ^^ yield cool voor testen van de real time versie!!
