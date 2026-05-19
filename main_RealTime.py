@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 # Internal Packages
+
 from Evaluation_Metrics import ospa_stonesoup
 from Kalman_Filters import UnscentedKalmanFilter
-from Utils.KalmanTuner import TuneEKF, TuneUKF
 from Track_Simulation import (
     simulateLinearTrack,
     simulateLinearTrackPolar,
@@ -17,12 +17,13 @@ from Utils.Wrapper_Functions import (
     SimulatorPolarMultitarget_stonesoup,
     UKFUpdater,
     UKFPredictor,
+
     # CustomDistanceMeasure
 )
+from Utils import ReadDetections,ReadAndClusterDetections
 
 #Stonesoup imports
 from stonesoup.models.measurement.nonlinear import CartesianToBearingRange
-
 from stonesoup.types.state import GaussianState
 from stonesoup.types.hypothesis import SingleHypothesis
 from stonesoup.types.track import Track
@@ -35,17 +36,12 @@ from stonesoup.measures import Mahalanobis
 from stonesoup.hypothesiser.distance import DistanceHypothesiser
 from stonesoup.plotter import Plotter
 
-from Utils.Wrapper_Functions.StoneSoup_Wrappers import SimulatorPolarMultitarget_stonesoup
-
 # Initialize values
-dt = 1
-x_initial = 5
-y_initial = 5
+dt = 0.0112
+# dt = 0.1
 
-num_datapoints = 30
 
 # Initialize the functions and matrices for the Kalman filter.
-
 F_generator = lambda dt: np.array([
     [1, dt, 0.5*dt**2, 0, 0,  0],          # x
     [0,  1,     dt,    0, 0,  0],          # vx
@@ -58,15 +54,12 @@ F = F_generator(dt)
 
 f = lambda x: np.dot(F, x)
 
-
-
 h_cartesian = lambda x: np.array([x[0], x[3]])
 
 H_cartesian = lambda x: np.array([[1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0]])
 
 h_polar = lambda x: np.array([np.arctan2(x[3], x[0]),
-                              np.sqrt(x[0]**2 + x[3]**2)]
-                             )
+                              np.sqrt(x[0]**2 + x[3]**2)])
 
 H_polar = lambda x: np.array(
     [
@@ -89,8 +82,10 @@ H_polar = lambda x: np.array(
     ]
 )
 
+#Process noise matrix.
+#IMPORTANT: the process noise is dependent on dt
 # Q = 0.01 * np.eye(6)
-var_a = 0.25
+var_a = 0.5
 Q1D_generator = lambda dt: var_a * np.array([
 
     [(dt**5 / 20), (dt**4 / 8),(dt**3 / 6)],
@@ -105,17 +100,23 @@ Q_generator = lambda dt: np.block([
 
 Q = Q_generator(dt)
 
-
-x0 = np.array([[x_initial], [1], [0], [y_initial], [1], [0]])
 # Constant acceleration (CA)
-P0 = 10 * np.eye(6)
+x0 = np.array([[1], [0], [0], [1], [0], [0]])
 
-range_sigma = 1
+#Starting error covariance (should be on the higher side to quickly settle in towards the correct values. i.e high uncertainty to start with :))
+P0 = 1 * np.eye(6)
+
+#Define variances in measurement dimensions.
+range_sigma = 0.5
 azimuth_sigma = np.deg2rad(3)
+
+#convert to variance.
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
 
-R = 1 * np.array([[var_phi, 0], [0, var_r]])
+#Initialize measurement error matrix.
+R = 1 * np.array([[var_phi,     0  ],
+                  [0,        var_r]])
 
 #Define measurement_model
 measurement_model = CartesianToBearingRange(
@@ -124,114 +125,78 @@ measurement_model = CartesianToBearingRange(
         noise_covar=R
 )
 
+# start the clock for easy timestamp management
 start_time = datetime.now()
 
-shared_config = {
-    "sim_function": simulateRandomAccelTrackPolar,
-    "start_time": start_time,
-    "measurement_model": measurement_model,
-    "num_datapoints": num_datapoints,
-    "dt": dt,
-    "sigma_r": range_sigma,
-    "sigma_phi": azimuth_sigma,
-    "add_clutter" : True
-}
-
-drones_params = [
-    {
-        "x0": x_initial,
-        "y0": y_initial,
-        "v_x": 5.0,
-        "v_y": 5.0
-    },
-    # {
-    #     "x0": x_initial + 100,
-    #     "y0": y_initial,
-    #     "v_x": -5,
-    #     "v_y": 5
-    # },
-    # {
-    #     "x0": x_initial + 100,
-    #     "y0": y_initial + 70,
-    #     "v_x": -5,
-    #     "v_y": 1,
-    #     "delay_steps" : 10
-    # },
-    # {
-    #     "x0": x_initial + 150,
-    #     "y0": y_initial + 70,
-    #     "v_x": 1,
-    #     "v_y": 4,
-    #     "delay_steps" : 50
-    # },
-    # {
-    #     "x0": x_initial + 30,
-    #     "y0": y_initial + 90,
-    #     "v_x": 0,
-    #     "v_y": -4,
-    #     "delay_steps" : 30
-    # }
-]
-
-detections, ground_truths = SimulatorPolarMultitarget_stonesoup( **shared_config, drone_configs=drones_params)
+# Get the detections from Abdullahs group
+detections = ReadAndClusterDetections(
+    filepath="Data/NEO2_range_angle_velocity_detections_ndoppler100.csv",
+    measurement_model = measurement_model,
+    dt = dt,
+    start_time = start_time
+)
 
 
-ukf = UnscentedKalmanFilter(f=f, h=h_polar, Q=Q, R=R, x0=x0, P0=P0, alpha=0.7, beta=2, kappa=0)
 
+
+#___Initialize the filter____
+ukf = UnscentedKalmanFilter(f=f, h=h_polar, Q=Q, R=R, x0=x0, P0=P0, alpha=1, beta=2, kappa=0)
+
+#make the stonesoup objects necessary for the stonesoup integration.
 predictor = UKFPredictor(ukf=ukf)
 updater = UKFUpdater(ukf=ukf)
+#____________________________
 
+
+#_______Other stuff__
 prior = GaussianState(
     state_vector=x0,
     covar=ukf.P,
     timestamp=start_time,
 )
 
+
 hypothesiser = DistanceHypothesiser(
     predictor,
     updater,
     measure=Mahalanobis(),
-    missed_distance=5
+    missed_distance=4
 )
 
 data_associator = GlobalNearestNeighbour(hypothesiser)
 
-deleter = UpdateTimeStepsDeleter(time_steps_since_update=3)
+deleter = UpdateTimeStepsDeleter(time_steps_since_update=8)
 
 initiator = MultiMeasurementInitiator(
-    prior_state=prior, #dummy
+    prior_state=prior,
     deleter=deleter,
     data_associator=data_associator,
     updater=updater,
-    min_points=4
+    min_points=3
 )
-
-
-
-# for detection_set in detections:
-#     for detection in detection_set:
-#
-#         timestamp += datetime.timedelta(seconds=dt)
-#
-#         prediction = predictor.predict(prior, timestamp=timestamp)
-#
-#
-#         hypothesis = SingleHypothesis(prediction=prediction, measurement=detection)
-#
-#         posterior = updater.update(hypothesis)
-#
-#         track.append(posterior)
-#
-#         prior = posterior
+#________________________
 
 
 tracks, all_tracks = set(), set()
 timesteps = []
+previous_timestamp = None
 
 for n, measurements in enumerate(detections):
 
-    timestamp = start_time + timedelta(seconds=dt*n)
+    if not measurements:
+        continue
+
+    timestamp = next(iter(measurements)).timestamp
     timesteps.append(timestamp)
+    # Compute actual dt
+    if previous_timestamp is not None:
+        actual_dt = (timestamp - previous_timestamp).total_seconds()
+
+        ukf.f = lambda x, ac_dt=actual_dt: np.dot(F_generator(ac_dt), x)
+        ukf.Q = Q_generator(actual_dt)
+
+    previous_timestamp = timestamp
+
     hypotheses = data_associator.associate(tracks,
                                            measurements,
                                            timestamp)
@@ -252,36 +217,30 @@ for n, measurements in enumerate(detections):
 
     tracks -= deleter.delete_tracks(tracks)
     tracks |= initiator.initiate(measurements - associated_measurements,
-                                 start_time + timedelta(seconds=dt*n))
+                                 timestamp)
     all_tracks |= tracks
 
 
 
-
-ospa_stonesoup(track = all_tracks, ground_truth=ground_truths)
-
 # Plotting
 plotter = Plotter()
-plotter.plot_ground_truths(ground_truths, [0, 3])   # indices of x,y in state vector
+# plotter.plot_ground_truths(ground_truths, [0, 3])   # indices of x,y in state vector
 plotter.plot_tracks(all_tracks, [0, 3])
 plotter.plot_measurements(
     [det for det_set in detections for det in det_set],
     [0, 3],
     measurement_model=measurement_model
 )
-# plt.text(0.05, 0.95, f"Average OSPA: {avg_ospa:.2f}m",
-#          transform=plt.gca().transAxes,
-#          fontsize=12,
-#          verticalalignment='top',
-#          bbox=dict(boxstyle='round', facecolor='white', alpha=0.5))
 
 ax = plt.gca()
 x_min, x_max = ax.get_xlim()
 y_min, y_max = ax.get_ylim()
 data_min = min(x_min, y_min)
 data_max = max(x_max, y_max)
-ax.set_xlim(data_min, data_max)
-ax.set_ylim(data_min, data_max)
+# ax.set_xlim(data_min, data_max)
+# ax.set_ylim(data_min, data_max)
+ax.set_xlim(-10, 50)
+ax.set_ylim(-30, 30)
 ax.set_aspect('equal', adjustable='box')
 
 plt.grid()
@@ -292,6 +251,6 @@ from stonesoup.plotter import AnimatedPlotterly
 plotter = AnimatedPlotterly(timesteps, tail_length=1)
 
 plotter.plot_tracks(all_tracks, [0, 3], uncertainty=True)
-plotter.plot_ground_truths(ground_truths, [0, 3])
+# plotter.plot_ground_truths(ground_truths, [0, 3])
 plotter.plot_measurements(detections, [0, 3])
 plotter.fig.show()
