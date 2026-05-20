@@ -7,3 +7,4 @@ from .AnimateTrack import (
 )
 from .ReadDetections import ReadDetections, ReadAndClusterDetections
 from .KalmanTuner import TuneEKF, TuneUKF
+from .KalmanTuner_stonesoup import TuneUKF_stonesoup

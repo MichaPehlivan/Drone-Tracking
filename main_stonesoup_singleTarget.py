@@ -17,10 +17,10 @@ from Utils.Wrapper_Functions import (
     SimulatorPolar_stonesoup,
     SimulatorPolarMultitarget_stonesoup,
     UKFUpdater,
-    UKFPredictor
+    UKFPredictor,
 )
 
-#Stonesoup imports
+# Stonesoup imports
 from stonesoup.models.measurement.nonlinear import CartesianToBearingRange
 
 from stonesoup.types.state import GaussianState
@@ -29,7 +29,9 @@ from stonesoup.types.track import Track
 
 from stonesoup.plotter import Plotter
 
-from Utils.Wrapper_Functions.StoneSoup_Wrappers import SimulatorPolarMultitarget_stonesoup
+from Utils.Wrapper_Functions.StoneSoup_Wrappers import (
+    SimulatorPolarMultitarget_stonesoup,
+)
 
 # Initialize values
 dt = 0.4
@@ -39,31 +41,36 @@ y_initial = 5
 num_datapoints = 50
 
 # Initialize the functions and matrices for the Kalman filter.
-f = lambda x: np.dot(np.array([
-    [1, dt, 0.5*dt**2, 0, 0,  0        ],  # x
-    [0, 1,  dt,        0, 0,  0        ],  # vx
-    [0, 0,  1,         0, 0,  0        ],  # ax
-    [0, 0,  0,         1, dt, 0.5*dt**2],  # y
-    [0, 0,  0,         0, 1,  dt       ],  # vy
-    [0, 0,  0,         0, 0,  1        ],  # ay
-]), x)
+f = lambda x: np.dot(
+    np.array(
+        [
+            [1, dt, 0.5 * dt**2, 0, 0, 0],  # x
+            [0, 1, dt, 0, 0, 0],  # vx
+            [0, 0, 1, 0, 0, 0],  # ax
+            [0, 0, 0, 1, dt, 0.5 * dt**2],  # y
+            [0, 0, 0, 0, 1, dt],  # vy
+            [0, 0, 0, 0, 0, 1],  # ay
+        ]
+    ),
+    x,
+)
 
-F = lambda x: np.array([
-    [1, dt, 0.5*dt**2, 0, 0,  0],          # x
-    [0,  1,     dt,    0, 0,  0],          # vx
-    [0,  0,     1,     0, 0,  0],          # ax
-    [0,  0,     0,     1, dt, 0.5*dt**2],  # y
-    [0,  0,     0,     0, 1,  dt],         # vy
-    [0,  0,     0,     0, 0,  1],          # ay
-])
+F = lambda x: np.array(
+    [
+        [1, dt, 0.5 * dt**2, 0, 0, 0],  # x
+        [0, 1, dt, 0, 0, 0],  # vx
+        [0, 0, 1, 0, 0, 0],  # ax
+        [0, 0, 0, 1, dt, 0.5 * dt**2],  # y
+        [0, 0, 0, 0, 1, dt],  # vy
+        [0, 0, 0, 0, 0, 1],  # ay
+    ]
+)
 
 h_cartesian = lambda x: np.array([x[0], x[3]])
 
 H_cartesian = lambda x: np.array([[1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0]])
 
-h_polar = lambda x: np.array([np.arctan2(x[3], x[0]),
-                              np.sqrt(x[0]**2 + x[3]**2)]
-                             )
+h_polar = lambda x: np.array([np.arctan2(x[3], x[0]), np.sqrt(x[0] ** 2 + x[3] ** 2)])
 
 H_polar = lambda x: np.array(
     [
@@ -110,26 +117,23 @@ var_phi = azimuth_sigma**2
 
 R = 1 * np.array([[var_phi, 0], [0, var_r]])
 
-#Define measurement_model
-measurement_model = CartesianToBearingRange(
-        ndim_state=6,
-        mapping=(0, 3),
-        noise_covar=R
-)
+# Define measurement_model
+measurement_model = CartesianToBearingRange(ndim_state=6, mapping=(0, 3), noise_covar=R)
 
 timestamp = datetime.datetime.now()
 
 detections, ground_truth = SimulatorPolar_stonesoup(
-    sim_function = simulateRandomAccelTrackPolar,
-    start_time = timestamp,
-    measurement_model=measurement_model, v_x=5,
+    sim_function=simulateRandomAccelTrackPolar,
+    start_time=timestamp,
+    measurement_model=measurement_model,
+    v_x=5,
     v_y=5,
     x0=x_initial,
     y0=y_initial,
     num_datapoints=num_datapoints,
     dt=dt,
     sigma_r=range_sigma,
-    sigma_phi=azimuth_sigma
+    sigma_phi=azimuth_sigma,
 )
 
 ukf = UnscentedKalmanFilter(
@@ -165,7 +169,6 @@ for detection_set in detections:
 
         prediction = predictor.predict(prior, timestamp=timestamp)
 
-
         hypothesis = SingleHypothesis(prediction=prediction, measurement=detection)
         posterior = updater.update(hypothesis)
 
@@ -174,22 +177,25 @@ for detection_set in detections:
         prior = posterior
 
 
-
-avg_ospa = average_ospa_stonesoup(track = track, ground_truth=ground_truth)
+avg_ospa = average_ospa_stonesoup(track=track, ground_truth=ground_truth)
 
 plotter = Plotter()
-plotter.plot_ground_truths({ground_truth}, [0, 3])   # indices of x,y in state vector
+plotter.plot_ground_truths({ground_truth}, [0, 3])  # indices of x,y in state vector
 plotter.plot_tracks({track}, [0, 3])
 plotter.plot_measurements(
     [det for det_set in detections for det in det_set],
     [0, 3],
-    measurement_model=measurement_model
+    measurement_model=measurement_model,
 )
-plt.text(0.05, 0.95, f"Average OSPA: {avg_ospa:.2f}m",
-         transform=plt.gca().transAxes,
-         fontsize=12,
-         verticalalignment='top',
-         bbox=dict(boxstyle='round', facecolor='white', alpha=0.5))
+plt.text(
+    0.05,
+    0.95,
+    f"Average OSPA: {avg_ospa:.2f}m",
+    transform=plt.gca().transAxes,
+    fontsize=12,
+    verticalalignment="top",
+    bbox=dict(boxstyle="round", facecolor="white", alpha=0.5),
+)
 
 ax = plt.gca()
 x_min, x_max = ax.get_xlim()
@@ -198,31 +204,11 @@ data_min = min(x_min, y_min)
 data_max = max(x_max, y_max)
 ax.set_xlim(data_min, data_max)
 ax.set_ylim(data_min, data_max)
-ax.set_aspect('equal', adjustable='box')
+ax.set_aspect("equal", adjustable="box")
 
 plt.grid()
 plotter.fig.show()
 plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 # fig = plt.figure()

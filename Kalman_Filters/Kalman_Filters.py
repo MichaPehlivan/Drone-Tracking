@@ -210,9 +210,9 @@ class UnscentedKalmanFilter:
         dx = transformed_sigma_points - self.x
         self.P = np.dot((self.wc * dx.T), dx) + self.Q
 
-        return self.x, transformed_sigma_points
+        return self.x
 
-    def update(self, transformed_sigma_points, z):
+    def update(self, z):
         z = z.flatten()
 
         # recompute sigma points from most recent estimate
@@ -241,4 +241,89 @@ class UnscentedKalmanFilter:
         self.x = self.x + np.dot(K, S)
         self.P = self.P - np.dot(np.dot(K, Pyy), K.T)
 
-        return self.x
+        return self.x, Pyy, S
+
+
+class MMUnscentedKalmanFilter:
+    """
+    Unscented Kalman filter class using multiple models.
+
+    inputs TODO update for Multiple Models:
+        f: State transition function
+        h: Observation function
+        R: Measurement noise covariance TODO: figure out appropriate values 1
+        x0: Initial state estimate
+            state vector:
+                |    x         |
+                |    vx         |
+                |    ax         |
+                |    y         |
+                |    vy         |
+                |    ay         |
+
+        Q: Process noise covariance (uncertainty in the process)  TODO: figure out appropriate values 2
+        P0: Initial Error covariance (needs to be a large value)
+        alpha: scaling parameter
+        beta: scaling parameter
+        kappa: scaling parameter
+
+    Methods:
+        predict: predicts a new state based on current state.
+
+        update: updates the estimate using the measurement and the kalman gain.
+            z: Measurement (cartesian coordinates)
+    """
+
+    def __init__(self, filters, tpm, mu0):
+        self.filters = filters
+        self.tpm = tpm
+        self.mu = mu0
+        self.N = len(filters)
+
+        self.x = np.copy(filters[0].x)
+        self.P = np.copy(filters[0].P)
+
+    def predict(self):
+        for filter in self.filters:
+            filter.predict()
+
+    def update(self, z):
+        z = z.flatten()
+
+        predicted_mu = np.dot(self.tpm, self.mu)
+
+        likelyhoods = np.zeros(self.N)
+        updated_states = []
+        updated_covariances = []
+
+        for j, filter in enumerate(self.filters):
+            x_j, Pyy, S = filter.update(z)
+            updated_states.append(x_j)
+            updated_covariances.append(filter.P)
+
+            # compute likelyhood
+            num = -0.5 * S.T, np.dot(np.linalg.inv(Pyy), S)
+            den = np.linalg.det(2 * np.pi * Pyy)
+            likelyhoods[j] = np.exp(num) / np.sqrt(den)
+
+        mu = predicted_mu * likelyhoods
+        sum_mu = np.sum(mu)
+        self.mu = mu / sum_mu
+
+        # Merge states to create the combined GPB1 output
+        self.x = np.zeros_like(self.filters[0].x)
+        for j in range(self.M):
+            self.x += self.mu[j] * updated_states[j]
+
+        # Merge covariances
+        self.P = np.zeros_like(self.filters[0].P)
+        for j in range(self.M):
+            dx = updated_states[j] - self.x
+            self.P += self.mu[j] * (updated_covariances[j] + np.outer(dx, dx))
+
+        # Reset all individual filters to this combined state
+        for filter_model in self.filters:
+            filter_model.x = np.copy(self.x)
+            filter_model.P = np.copy(self.P)
+
+        return self.x, self.P, self.mu

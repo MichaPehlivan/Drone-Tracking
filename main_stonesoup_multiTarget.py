@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
+
 # Internal Packages
 from Evaluation_Metrics import ospa_stonesoup
 from Kalman_Filters import UnscentedKalmanFilter
@@ -12,6 +13,7 @@ from Track_Simulation import (
     simulateRandomAccelTrackPolar,
     simulateRandomAccelHoverTrackPolar,
 )
+from Utils.KalmanTuner_stonesoup import TuneUKF_stonesoup
 from Utils.Wrapper_Functions import (
     SimulatorPolar_stonesoup,
     SimulatorPolarMultitarget_stonesoup,
@@ -20,7 +22,7 @@ from Utils.Wrapper_Functions import (
     # CustomDistanceMeasure
 )
 
-#Stonesoup imports
+# Stonesoup imports
 from stonesoup.models.measurement.nonlinear import CartesianToBearingRange
 
 from stonesoup.types.state import GaussianState
@@ -38,11 +40,11 @@ from stonesoup.plotter import Plotter
 from Utils.Wrapper_Functions.StoneSoup_Wrappers import SimulatorPolarMultitarget_stonesoup
 
 # Initialize values
-dt = 1
+dt = 0.4
 x_initial = 5
 y_initial = 5
 
-num_datapoints = 30
+num_datapoints = 100
 
 # Initialize the functions and matrices for the Kalman filter.
 
@@ -144,39 +146,41 @@ drones_params = [
         "v_x": 5.0,
         "v_y": 5.0
     },
-    # {
-    #     "x0": x_initial + 100,
-    #     "y0": y_initial,
-    #     "v_x": -5,
-    #     "v_y": 5
-    # },
-    # {
-    #     "x0": x_initial + 100,
-    #     "y0": y_initial + 70,
-    #     "v_x": -5,
-    #     "v_y": 1,
-    #     "delay_steps" : 10
-    # },
-    # {
-    #     "x0": x_initial + 150,
-    #     "y0": y_initial + 70,
-    #     "v_x": 1,
-    #     "v_y": 4,
-    #     "delay_steps" : 50
-    # },
-    # {
-    #     "x0": x_initial + 30,
-    #     "y0": y_initial + 90,
-    #     "v_x": 0,
-    #     "v_y": -4,
-    #     "delay_steps" : 30
-    # }
+    {
+        "x0": x_initial + 100,
+        "y0": y_initial,
+        "v_x": -5,
+        "v_y": 5
+    },
+    {
+        "x0": x_initial + 100,
+        "y0": y_initial + 70,
+        "v_x": -5,
+        "v_y": 1,
+        "delay_steps" : 10
+    },
+    {
+        "x0": x_initial + 150,
+        "y0": y_initial + 70,
+        "v_x": 1,
+        "v_y": 4,
+        "delay_steps" : 50
+    },
+    {
+        "x0": x_initial + 30,
+        "y0": y_initial + 90,
+        "v_x": 0,
+        "v_y": -4,
+        "delay_steps" : 30
+    }
 ]
 
-detections, ground_truths = SimulatorPolarMultitarget_stonesoup( **shared_config, drone_configs=drones_params)
+detections, ground_truths = SimulatorPolarMultitarget_stonesoup(
+    **shared_config, drone_configs=drones_params
+)
 
 
-ukf = UnscentedKalmanFilter(f=f, h=h_polar, Q=Q, R=R, x0=x0, P0=P0, alpha=0.7, beta=2, kappa=0)
+ukf = UnscentedKalmanFilter(f=f, h=h_polar, Q=Q, R=R, x0=x0, P0=P0, alpha=0.3, beta=2, kappa=0)
 
 predictor = UKFPredictor(ukf=ukf)
 updater = UKFUpdater(ukf=ukf)
@@ -230,11 +234,9 @@ timesteps = []
 
 for n, measurements in enumerate(detections):
 
-    timestamp = start_time + timedelta(seconds=dt*n)
+    timestamp = start_time + timedelta(seconds=dt * n)
     timesteps.append(timestamp)
-    hypotheses = data_associator.associate(tracks,
-                                           measurements,
-                                           timestamp)
+    hypotheses = data_associator.associate(tracks, measurements, timestamp)
     associated_measurements = set()
 
     for track in tracks:
@@ -251,18 +253,17 @@ for n, measurements in enumerate(detections):
 
 
     tracks -= deleter.delete_tracks(tracks)
-    tracks |= initiator.initiate(measurements - associated_measurements,
-                                 start_time + timedelta(seconds=dt*n))
+    tracks |= initiator.initiate(
+        measurements - associated_measurements, start_time + timedelta(seconds=dt * n)
+    )
     all_tracks |= tracks
 
 
-
-
-ospa_stonesoup(track = all_tracks, ground_truth=ground_truths)
+ospa_stonesoup(track=all_tracks, ground_truth=ground_truths)
 
 # Plotting
 plotter = Plotter()
-plotter.plot_ground_truths(ground_truths, [0, 3])   # indices of x,y in state vector
+plotter.plot_ground_truths(ground_truths, [0, 3])  # indices of x,y in state vector
 plotter.plot_tracks(all_tracks, [0, 3])
 plotter.plot_measurements(
     [det for det_set in detections for det in det_set],
@@ -282,16 +283,32 @@ data_min = min(x_min, y_min)
 data_max = max(x_max, y_max)
 ax.set_xlim(data_min, data_max)
 ax.set_ylim(data_min, data_max)
-ax.set_aspect('equal', adjustable='box')
+ax.set_aspect("equal", adjustable="box")
 
 plt.grid()
 plotter.fig.show()
 plt.show()
 
 from stonesoup.plotter import AnimatedPlotterly
+
 plotter = AnimatedPlotterly(timesteps, tail_length=1)
 
 plotter.plot_tracks(all_tracks, [0, 3], uncertainty=True)
 plotter.plot_ground_truths(ground_truths, [0, 3])
-plotter.plot_measurements(detections, [0, 3])
+# plotter.plot_measurements(detections, [0, 3])
 plotter.fig.show()
+
+# TuneUKF_stonesoup(
+#     f,
+#     h_polar,
+#     x0,
+#     var_phi,
+#     var_r,
+#     2,
+#     0,
+#     dt,
+#     start_time,
+#     shared_config,
+#     drones_params,
+#     1,
+# )
