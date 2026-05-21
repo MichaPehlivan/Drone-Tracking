@@ -15,6 +15,7 @@ from Tracking_Routines import (
     RunJointKalman,
 )
 from Utils import animate_track
+from Utils.KalmanBenchmarker import BenchmarkEKF, BenchmarkUKF
 from Utils.KalmanTuner import TuneEKF, TuneUKF
 
 # EXTENDED KALMAN FILTER
@@ -79,7 +80,7 @@ H_polar = lambda x: np.array(
 )
 
 # TODO: Find appropriate covariance matrices.
-Q = 0.01 * np.array(
+Q = 0.1 * np.array(
     [
         [(dt**5) / 20, 0, (dt**4) / 8, 0, (dt**3) / 6, 0],
         [0, (dt**5) / 20, 0, (dt**4) / 8, 0, (dt**3) / 6],
@@ -90,11 +91,11 @@ Q = 0.01 * np.array(
     ]
 )
 
-R = 0.1 * np.array([[var, 0], [0, var]])
+R = 1.0 * np.array([[var, 0], [0, var]])
 
 x0 = np.array([[x_initial], [y_initial], [1], [1], [1], [1]])
 
-P0 = 0.1 * np.eye(6)
+P0 = 1.0 * np.eye(6)
 
 # # Run with no noise
 # range_sigma = 0
@@ -123,7 +124,7 @@ range_sigma = 1
 azimuth_sigma = np.deg2rad(3)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
-R = 0.1 * np.array([[var_r, 0], [0, var_phi]])
+R = 1.0 * np.array([[var_r, 0], [0, var_phi]])
 
 measurements, trueTrack = simulateRandomAccelTrackPolar(
     v_x=1,
@@ -148,9 +149,11 @@ measurements, trueTrack = simulateRandomAccelTrackPolar(
 
 
 # animate_track(trueTrack, dt=dt)
-RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 2.0, 2, 0, measurements, trueTrack)
+# RunJointKalman(f, h_polar, F, H_polar, Q, R, x0, P0, 2.0, 2, 0, measurements, trueTrack)
 # TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 10)
 # TuneUKF(f, h_polar, x0, var_r, var_phi, dt, 2, 0, 10)
+# BenchmarkEKF(f, h_polar, F, H_polar, Q, R, x0, P0, var_r, var_phi, dt, 100)
+BenchmarkUKF(f, h_polar, Q, R, x0, P0, var_r, var_phi, dt, 0.5, 2, 0, 1000)
 
 # # Another with high sigma
 # range_sigma = 10
