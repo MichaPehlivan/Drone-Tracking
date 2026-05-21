@@ -146,8 +146,8 @@ def RunJointKalman(
             6,
         )
 
-        _, sigma = UKF.predict()
-        UKF.update(sigma, measurements[:, i].reshape(2, 1))
+        UKF.predict()
+        UKF.update(measurements[:, i].reshape(2, 1))
 
         x_history_ukf[:, i] = UKF.x.reshape(
             6,

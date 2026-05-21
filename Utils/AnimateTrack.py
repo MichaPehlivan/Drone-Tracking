@@ -141,7 +141,9 @@ def animate_TrackJointKalmanMeasurements(
     ax.grid(True, linestyle="--", alpha=0.6)
     ax.set_xlabel("X Position (m)")
     ax.set_ylabel("Y Position (m)")
-    ax.set_title("Tracking Performance: Truth vs. EKF vs. UKF vs. Measurements")
+    ax.set_title(
+        "Tracking Performance: Truth vs. EKF vs. UKF vs. Measurements", fontsize=16
+    )
 
     (line_true,) = ax.plot([], [], "g--", alpha=0.4, label="True Path")
     (point_true,) = ax.plot([], [], "go", markersize=6, label="True Object")
@@ -162,7 +164,7 @@ def animate_TrackJointKalmanMeasurements(
         transform=ax.transAxes,
         verticalalignment="bottom",
         horizontalalignment="right",
-        fontsize=12,
+        fontsize=16,
     )
     ax.text(
         0.98,
@@ -171,10 +173,10 @@ def animate_TrackJointKalmanMeasurements(
         transform=ax.transAxes,
         verticalalignment="bottom",
         horizontalalignment="right",
-        fontsize=12,
+        fontsize=16,
     )
 
-    ax.legend(loc="upper right")
+    ax.legend(loc="upper right", fontsize=16)
 
     def init():
         line_true.set_data([], [])

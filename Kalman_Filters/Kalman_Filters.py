@@ -119,12 +119,9 @@ class UnscentedKalmanFilter:
         x0: Initial state estimate
             state vector:
                 |    x         |
-                |    vx         |
-                |    ax         |
                 |    y         |
-                |    vy         |
-                |    ay         |
-
+                |  x_dot (vx)  |
+                |_ y_dot (vy) _|
         Q: Process noise covariance (uncertainty in the process)  TODO: figure out appropriate values 2
         P0: Initial Error covariance (needs to be a large value)
         alpha: scaling parameter
@@ -157,12 +154,11 @@ class UnscentedKalmanFilter:
     # calculate mean while normalizing angle
     def calculate_polar_mean(self, y):
         y_mean = np.zeros(2)
+        y_mean[0] = np.dot(self.wm, y[:, 0])
 
-        sum_sin = np.sum(self.wm * np.sin(y[:, 0]))
-        sum_cos = np.sum(self.wm * np.cos(y[:, 0]))
-        y_mean[0] = np.arctan2(sum_sin, sum_cos)
-
-        y_mean[1] = np.dot(self.wm, y[:, 1])
+        sum_sin = np.sum(self.wm * np.sin(y[:, 1]))
+        sum_cos = np.sum(self.wm * np.cos(y[:, 1]))
+        y_mean[1] = np.arctan2(sum_sin, sum_cos)
 
         return y_mean
 
@@ -225,7 +221,7 @@ class UnscentedKalmanFilter:
 
         # compute residuals
         dy = y - y_mean
-        dy[:, 0] = self.normalize_angle(dy[:, 0])
+        dy[:, 1] = self.normalize_angle(dy[:, 1])
         dx = transformed_sigma_points - self.x
 
         # estimate covariances
@@ -236,94 +232,9 @@ class UnscentedKalmanFilter:
         K = np.dot(Pxy, np.linalg.inv(Pyy))
 
         S = z - y_mean
-        S[0] = self.normalize_angle(S[0])
+        S[1] = self.normalize_angle(S[1])
 
         self.x = self.x + np.dot(K, S)
         self.P = self.P - np.dot(np.dot(K, Pyy), K.T)
 
-        return self.x, Pyy, S
-
-
-class MMUnscentedKalmanFilter:
-    """
-    Unscented Kalman filter class using multiple models.
-
-    inputs TODO update for Multiple Models:
-        f: State transition function
-        h: Observation function
-        R: Measurement noise covariance TODO: figure out appropriate values 1
-        x0: Initial state estimate
-            state vector:
-                |    x         |
-                |    vx         |
-                |    ax         |
-                |    y         |
-                |    vy         |
-                |    ay         |
-
-        Q: Process noise covariance (uncertainty in the process)  TODO: figure out appropriate values 2
-        P0: Initial Error covariance (needs to be a large value)
-        alpha: scaling parameter
-        beta: scaling parameter
-        kappa: scaling parameter
-
-    Methods:
-        predict: predicts a new state based on current state.
-
-        update: updates the estimate using the measurement and the kalman gain.
-            z: Measurement (cartesian coordinates)
-    """
-
-    def __init__(self, filters, tpm, mu0):
-        self.filters = filters
-        self.tpm = tpm
-        self.mu = mu0
-        self.N = len(filters)
-
-        self.x = np.copy(filters[0].x)
-        self.P = np.copy(filters[0].P)
-
-    def predict(self):
-        for filter in self.filters:
-            filter.predict()
-
-    def update(self, z):
-        z = z.flatten()
-
-        predicted_mu = np.dot(self.tpm, self.mu)
-
-        likelyhoods = np.zeros(self.N)
-        updated_states = []
-        updated_covariances = []
-
-        for j, filter in enumerate(self.filters):
-            x_j, Pyy, S = filter.update(z)
-            updated_states.append(x_j)
-            updated_covariances.append(filter.P)
-
-            # compute likelyhood
-            num = -0.5 * S.T, np.dot(np.linalg.inv(Pyy), S)
-            den = np.linalg.det(2 * np.pi * Pyy)
-            likelyhoods[j] = np.exp(num) / np.sqrt(den)
-
-        mu = predicted_mu * likelyhoods
-        sum_mu = np.sum(mu)
-        self.mu = mu / sum_mu
-
-        # Merge states to create the combined GPB1 output
-        self.x = np.zeros_like(self.filters[0].x)
-        for j in range(self.M):
-            self.x += self.mu[j] * updated_states[j]
-
-        # Merge covariances
-        self.P = np.zeros_like(self.filters[0].P)
-        for j in range(self.M):
-            dx = updated_states[j] - self.x
-            self.P += self.mu[j] * (updated_covariances[j] + np.outer(dx, dx))
-
-        # Reset all individual filters to this combined state
-        for filter_model in self.filters:
-            filter_model.x = np.copy(self.x)
-            filter_model.P = np.copy(self.P)
-
-        return self.x, self.P, self.mu
+        return self.x
