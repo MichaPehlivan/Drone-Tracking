@@ -127,11 +127,27 @@ def RunUnscentedKalman(
 
 
 def RunJointKalman(
-    f, h, F, H, Q, R, x0, P0, alpha, beta, kappa, measurements, trueTrack, polar=True
+    f,
+    h,
+    F,
+    H,
+    Q_EKF,
+    Q_UKF,
+    R_EKF,
+    R_UKF,
+    x0,
+    P0_EKF,
+    P0_UKF,
+    alpha,
+    beta,
+    kappa,
+    measurements,
+    trueTrack,
+    polar=True,
 ):
     # Define the kalman filters.
-    EKF = ExtendedKalmanFilter(f, h, F, H, Q, R, x0, P0)
-    UKF = UnscentedKalmanFilter(f, h, Q, R, x0, P0, alpha, beta, kappa)
+    EKF = ExtendedKalmanFilter(f, h, F, H, Q_EKF, R_EKF, x0, P0_EKF)
+    UKF = UnscentedKalmanFilter(f, h, Q_UKF, R_UKF, x0, P0_UKF, alpha, beta, kappa)
 
     # Initialize the history arrays.
     x_history_ekf = np.zeros((6, len(measurements[0, :])))

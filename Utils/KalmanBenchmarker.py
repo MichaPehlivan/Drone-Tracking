@@ -155,3 +155,134 @@ def BenchmarkUKF(f, h, Q, R, x0, P0, var_r, var_phi, dt, alpha, beta, kappa, N):
         print(
             f"Average OSPA for UKF = {average_score / N} over {N} random acceleration tracks"
         )
+
+
+def BenchmarkJoint(
+    f,
+    F,
+    h,
+    H,
+    Q_EKF,
+    Q_UKF,
+    R_EKF,
+    R_UKF,
+    x0,
+    P0_EKF,
+    P0_UKF,
+    var_r,
+    var_phi,
+    dt,
+    alpha,
+    beta,
+    kappa,
+    N,
+):
+    print("Benchmarking EKF + UKF on linear track")
+    average_score_EKF = 0
+    average_score_UKF = 0
+    failed = False
+    for _ in range(N):
+        measurements, trueTrack = simulateLinearTrackPolar(
+            v_x=1,
+            v_y=1,
+            x0=5,
+            y0=5,
+            num_datapoints=60,
+            dt=dt,
+            sigma_r=np.sqrt(var_r),
+            sigma_phi=np.sqrt(var_phi),
+        )
+        # Define the kalman filters.
+        EKF = ExtendedKalmanFilter(f, h, F, H, Q_EKF, R_EKF, x0, P0_EKF)
+        UKF = UnscentedKalmanFilter(f, h, Q_UKF, R_UKF, x0, P0_UKF, alpha, beta, kappa)
+
+        # Initialize the history arrays.
+        x_history_EKF = np.zeros((6, len(measurements[0, :])))
+        x_history_UKF = np.zeros((6, len(measurements[0, :])))
+
+        # Iterate over measurements to implement the recursive structure.
+        try:
+            for i in range(len(measurements[0, :])):
+                EKF.predict()
+                EKF.update(measurements[:, i].reshape(2, 1))
+
+                x_history_EKF[:, i] = EKF.x.reshape(
+                    6,
+                )
+
+                UKF.predict()
+                UKF.update(measurements[:, i].reshape(2, 1))
+
+                x_history_UKF[:, i] = UKF.x.reshape(
+                    6,
+                )
+
+            average_ospa_EKF = get_average_ospa(x_history_EKF, trueTrack)
+            average_score_EKF += average_ospa_EKF
+            average_ospa_UKF = get_average_ospa(x_history_UKF, trueTrack)
+            average_score_UKF += average_ospa_UKF
+        except np.linalg.LinAlgError:
+            failed = True
+            break
+    if failed:
+        print("UKF failed on at least 1 linear track")
+    else:
+        print(f"Average OSPA for EKF = {average_score_EKF / N} over {N} linear tracks")
+        print(f"Average OSPA for UKF = {average_score_UKF / N} over {N} linear tracks")
+
+    print("Benchmarking EKF + UKF on random acceleration track")
+    average_score_EKF = 0
+    average_score_UKF = 0
+    failed = False
+    for _ in range(N):
+        measurements, trueTrack = simulateRandomAccelTrackPolar(
+            v_x=1,
+            v_y=1,
+            x0=5,
+            y0=5,
+            num_datapoints=60,
+            dt=dt,
+            sigma_r=np.sqrt(var_r),
+            sigma_phi=np.sqrt(var_phi),
+        )
+        # Define the kalman filters.
+        EKF = ExtendedKalmanFilter(f, h, F, H, Q_EKF, R_EKF, x0, P0_EKF)
+        UKF = UnscentedKalmanFilter(f, h, Q_UKF, R_UKF, x0, P0_UKF, alpha, beta, kappa)
+
+        # Initialize the history arrays.
+        x_history_EKF = np.zeros((6, len(measurements[0, :])))
+        x_history_UKF = np.zeros((6, len(measurements[0, :])))
+
+        # Iterate over measurements to implement the recursive structure.
+        try:
+            for i in range(len(measurements[0, :])):
+                EKF.predict()
+                EKF.update(measurements[:, i].reshape(2, 1))
+
+                x_history_EKF[:, i] = EKF.x.reshape(
+                    6,
+                )
+
+                UKF.predict()
+                UKF.update(measurements[:, i].reshape(2, 1))
+
+                x_history_UKF[:, i] = UKF.x.reshape(
+                    6,
+                )
+
+            average_ospa_EKF = get_average_ospa(x_history_EKF, trueTrack)
+            average_score_EKF += average_ospa_EKF
+            average_ospa_UKF = get_average_ospa(x_history_UKF, trueTrack)
+            average_score_UKF += average_ospa_UKF
+        except np.linalg.LinAlgError:
+            failed = True
+            break
+    if failed:
+        print("UKF failed on at least 1 random acceleration track")
+    else:
+        print(
+            f"Average OSPA for EKF = {average_score_EKF / N} over {N} random acceleration tracks"
+        )
+        print(
+            f"Average OSPA for UKF = {average_score_UKF / N} over {N} random acceleration tracks"
+        )
