@@ -222,7 +222,7 @@ def optimize_EKF(f, h, F, H, x0, var_r, var_phi, dt, N):
     # Create and run the study
     study = optuna.create_study(direction="minimize")
     study.optimize(
-        objective, n_trials=100
+        objective, n_trials=150
     )  # 100 intelligent guesses instead of 512 blind ones
 
     print(f"Minimum OSPA for EKF = {study.best_value}, with {study.best_params}")
@@ -297,7 +297,7 @@ def optimize_UKF(f, h, x0, beta, kappa, var_r, var_phi, dt, N):
     # Create and run the study
     study = optuna.create_study(direction="minimize")
     study.optimize(
-        objective, n_trials=100
+        objective, n_trials=150
     )  # 100 intelligent guesses instead of 512 blind ones
 
-    print(f"Minimum OSPA for EKF = {study.best_value}, with {study.best_params}")
+    print(f"Minimum OSPA for UKF = {study.best_value}, with {study.best_params}")

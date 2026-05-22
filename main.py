@@ -176,29 +176,29 @@ alpha = 0.000148466
 # )
 # TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 10)
 # TuneUKF(f, h_polar, x0, var_r, var_phi, dt, 2, 0, 10)
-# optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 100)
-# optimize_UKF(f, h_polar, x0, 2, 0, var_r, var_phi, dt, 100)
+optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 1000)
+optimize_UKF(f, h_polar, x0, 2, 0, var_r, var_phi, dt, 1000)
 
-BenchmarkJoint(
-    f,
-    F,
-    h_polar,
-    H_polar,
-    Q_EKF,
-    Q_UKF,
-    R_EKF,
-    R_UKF,
-    x0,
-    P0_EKF,
-    P0_UKF,
-    var_r,
-    var_phi,
-    dt,
-    alpha,
-    2,
-    0,
-    1000,
-)
+# BenchmarkJoint(
+#     f,
+#     F,
+#     h_polar,
+#     H_polar,
+#     Q_EKF,
+#     Q_UKF,
+#     R_EKF,
+#     R_UKF,
+#     x0,
+#     P0_EKF,
+#     P0_UKF,
+#     var_r,
+#     var_phi,
+#     dt,
+#     alpha,
+#     2,
+#     0,
+#     1000,
+# )
 
 # # Another with high sigma
 # range_sigma = 10
