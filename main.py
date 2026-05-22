@@ -16,7 +16,7 @@ from Tracking_Routines import (
 )
 from Utils import animate_track
 from Utils.KalmanBenchmarker import BenchmarkEKF, BenchmarkJoint, BenchmarkUKF
-from Utils.KalmanTuner import TuneEKF, TuneUKF
+from Utils.KalmanTuner import TuneEKF, TuneUKF, optimize_EKF, optimize_UKF
 
 # EXTENDED KALMAN FILTER
 # Initialize values
@@ -147,13 +147,13 @@ measurements, trueTrack = simulateRandomAccelTrackPolar(
 #     sigma_phi=azimuth_sigma,
 # )
 
-Q_EKF = 0.1 * Q
-R_EKF = 1.0 * R
-P0_EKF = 0.1 * P0
-Q_UKF = 0.1 * Q
-R_UKF = 0.01 * R
-P0_UKF = 0.0001 * P0
-
+Q_EKF = 5.152 * Q
+R_EKF = 4.169 * R
+P0_EKF = 15.776 * P0
+Q_UKF = 0.000251 * Q
+R_UKF = 0.000537 * R
+P0_UKF = 0.0003977 * P0
+alpha = 0.000148466
 
 # animate_track(trueTrack, dt=dt)
 # RunJointKalman(
@@ -176,6 +176,8 @@ P0_UKF = 0.0001 * P0
 # )
 # TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 10)
 # TuneUKF(f, h_polar, x0, var_r, var_phi, dt, 2, 0, 10)
+# optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 100)
+# optimize_UKF(f, h_polar, x0, 2, 0, var_r, var_phi, dt, 100)
 
 BenchmarkJoint(
     f,
@@ -192,7 +194,7 @@ BenchmarkJoint(
     var_r,
     var_phi,
     dt,
-    1.0,
+    alpha,
     2,
     0,
     1000,

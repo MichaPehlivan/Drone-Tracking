@@ -6,5 +6,5 @@ from .AnimateTrack import (
     animate_TrackJointKalmanMeasurements,
 )
 from .ReadDetections import ReadDetections, ReadAndClusterDetections
-from .KalmanTuner import TuneEKF, TuneUKF
+from .KalmanTuner import TuneEKF, TuneUKF, optimize_EKF, optimize_UKF
 from .KalmanTuner_stonesoup import TuneUKF_stonesoup
