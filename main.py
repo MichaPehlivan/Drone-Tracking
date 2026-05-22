@@ -147,13 +147,13 @@ measurements, trueTrack = simulateRandomAccelTrackPolar(
 #     sigma_phi=azimuth_sigma,
 # )
 
-Q_EKF = 5.152 * Q
-R_EKF = 4.169 * R
-P0_EKF = 15.776 * P0
-Q_UKF = 0.000251 * Q
-R_UKF = 0.000537 * R
-P0_UKF = 0.0003977 * P0
-alpha = 0.000148466
+Q_EKF = 0.005384 * Q
+R_EKF = 0.0099066 * R
+P0_EKF = 0.0036077 * P0
+Q_UKF = 0.01317168 * Q
+R_UKF = 0.0320059 * R
+P0_UKF = 0.02300487 * P0
+alpha = 0.000100479
 
 # animate_track(trueTrack, dt=dt)
 # RunJointKalman(
@@ -176,29 +176,29 @@ alpha = 0.000148466
 # )
 # TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 10)
 # TuneUKF(f, h_polar, x0, var_r, var_phi, dt, 2, 0, 10)
-optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 1000)
-optimize_UKF(f, h_polar, x0, 2, 0, var_r, var_phi, dt, 1000)
+# optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 1000)
+# optimize_UKF(f, h_polar, x0, 2, 0, var_r, var_phi, dt, 1000)
 
-# BenchmarkJoint(
-#     f,
-#     F,
-#     h_polar,
-#     H_polar,
-#     Q_EKF,
-#     Q_UKF,
-#     R_EKF,
-#     R_UKF,
-#     x0,
-#     P0_EKF,
-#     P0_UKF,
-#     var_r,
-#     var_phi,
-#     dt,
-#     alpha,
-#     2,
-#     0,
-#     1000,
-# )
+BenchmarkJoint(
+    f,
+    F,
+    h_polar,
+    H_polar,
+    Q_EKF,
+    Q_UKF,
+    R_EKF,
+    R_UKF,
+    x0,
+    P0_EKF,
+    P0_UKF,
+    var_r,
+    var_phi,
+    dt,
+    alpha,
+    2,
+    0,
+    1000,
+)
 
 # # Another with high sigma
 # range_sigma = 10
