@@ -17,7 +17,13 @@ from Tracking_Routines import (
 )
 from Utils import animate_track
 from Utils.KalmanBenchmarker import BenchmarkEKF, BenchmarkJoint, BenchmarkUKF
-from Utils.KalmanTuner import TuneEKF, TuneUKF, optimize_EKF, optimize_UKF
+from Utils.KalmanTuner import (
+    TuneEKF,
+    TuneUKF,
+    optimize_UCMKF,
+    optimize_EKF,
+    optimize_UKF,
+)
 
 # EXTENDED KALMAN FILTER
 # Initialize values
@@ -150,6 +156,8 @@ measurements, trueTrack = simulateRandomAccelTrackPolar(
 #     sigma_phi=azimuth_sigma,
 # )
 
+Q_UCMKF = 0.54100675 * Q
+P0_UCMKF = 0.44446037 * P0
 Q_EKF = 0.005384 * Q
 R_EKF = 0.0099066 * R
 P0_EKF = 0.0036077 * P0
@@ -159,55 +167,60 @@ P0_UKF = 0.02300487 * P0
 alpha = 0.000100479
 
 # animate_track(trueTrack, dt=dt)
-RunJointKalman(
-    f_matrix,
-    f,
-    h_cartesian_matrix,
-    h_polar,
-    F,
-    H_polar,
-    Q,
-    Q_EKF,
-    Q_UKF,
-    R_EKF,
-    R_UKF,
-    range_sigma,
-    azimuth_sigma,
-    x0,
-    P0,
-    P0_EKF,
-    P0_UKF,
-    2.0,
-    2,
-    0,
-    measurements,
-    trueTrack,
-)
-# TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 10)
-# TuneUKF(f, h_polar, x0, var_r, var_phi, dt, 2, 0, 10)
-# optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 1000)
-# optimize_UKF(f, h_polar, x0, 2, 0, var_r, var_phi, dt, 1000)
-
-# BenchmarkJoint(
+# RunJointKalman(
+#     f_matrix,
 #     f,
-#     F,
+#     h_cartesian_matrix,
 #     h_polar,
+#     F,
 #     H_polar,
+#     Q_UCMKF,
 #     Q_EKF,
 #     Q_UKF,
 #     R_EKF,
 #     R_UKF,
+#     range_sigma,
+#     azimuth_sigma,
 #     x0,
+#     P0_UCMKF,
 #     P0_EKF,
 #     P0_UKF,
-#     var_r,
-#     var_phi,
-#     dt,
-#     alpha,
+#     2.0,
 #     2,
 #     0,
-#     1000,
+#     measurements,
+#     trueTrack,
 # )
+# TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 10)
+# TuneUKF(f, h_polar, x0, var_r, var_phi, dt, 2, 0, 10)
+# optimize_UCMKF(f_matrix, h_cartesian_matrix, x0, range_sigma, azimuth_sigma, dt, 1000)
+# optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 1000)
+# optimize_UKF(f, h_polar, x0, 2, 0, var_r, var_phi, dt, 1000)
+
+BenchmarkJoint(
+    f_matrix,
+    f,
+    F,
+    h_cartesian_matrix,
+    h_polar,
+    H_polar,
+    Q_UCMKF,
+    Q_EKF,
+    Q_UKF,
+    R_EKF,
+    R_UKF,
+    x0,
+    P0_UCMKF,
+    P0_EKF,
+    P0_UKF,
+    range_sigma,
+    azimuth_sigma,
+    dt,
+    alpha,
+    2,
+    0,
+    1000,
+)
 
 # # Another with high sigma
 # range_sigma = 10
