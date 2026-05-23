@@ -10,6 +10,7 @@ from Track_Simulation import (
 )
 from Tracking_Routines import (
     RunSimpleKalman,
+    RunConvertedKalman,
     RunExtendedKalman,
     RunUnscentedKalman,
     RunJointKalman,
@@ -29,17 +30,18 @@ var = measurement_sigma**2
 num_datapoints = 60
 
 # Initialize the functions and matrices for the Kalman filter.
+f_matrix = np.array(
+    [
+        [1, 0, dt, 0, 0.5 * dt**2, 0],
+        [0, 1, 0, dt, 0, 0.5 * dt**2],
+        [0, 0, 1, 0, dt, 0],
+        [0, 0, 0, 1, 0, dt],
+        [0, 0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 0, 1],
+    ]
+)
 f = lambda x: np.dot(
-    np.array(
-        [
-            [1, 0, dt, 0, 0.5 * dt**2, 0],
-            [0, 1, 0, dt, 0, 0.5 * dt**2],
-            [0, 0, 1, 0, dt, 0],
-            [0, 0, 0, 1, 0, dt],
-            [0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 0, 0, 1],
-        ]
-    ),
+    f_matrix,
     x,
 )
 F = lambda x: np.array(
@@ -54,7 +56,8 @@ F = lambda x: np.array(
 )
 
 h_cartesian = lambda x: np.array([x[0], x[1]])
-H_cartesian = lambda x: np.array([[1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0]])
+h_cartesian_matrix = np.array([[1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0]])
+H_cartesian = lambda x: h_cartesian_matrix
 h_polar = lambda x: np.array(
     [[np.sqrt(x[0] ** 2 + x[1] ** 2)], [np.arctan2(x[1], x[0])]]
 )  # conversion to polar
@@ -156,6 +159,17 @@ P0_UKF = 0.02300487 * P0
 alpha = 0.000100479
 
 # animate_track(trueTrack, dt=dt)
+RunConvertedKalman(
+    f_matrix,
+    h_cartesian_matrix,
+    Q,
+    range_sigma,
+    azimuth_sigma,
+    x0,
+    P0,
+    measurements,
+    trueTrack,
+)
 # RunJointKalman(
 #     f,
 #     h_polar,
@@ -179,26 +193,26 @@ alpha = 0.000100479
 # optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 1000)
 # optimize_UKF(f, h_polar, x0, 2, 0, var_r, var_phi, dt, 1000)
 
-BenchmarkJoint(
-    f,
-    F,
-    h_polar,
-    H_polar,
-    Q_EKF,
-    Q_UKF,
-    R_EKF,
-    R_UKF,
-    x0,
-    P0_EKF,
-    P0_UKF,
-    var_r,
-    var_phi,
-    dt,
-    alpha,
-    2,
-    0,
-    1000,
-)
+# BenchmarkJoint(
+#     f,
+#     F,
+#     h_polar,
+#     H_polar,
+#     Q_EKF,
+#     Q_UKF,
+#     R_EKF,
+#     R_UKF,
+#     x0,
+#     P0_EKF,
+#     P0_UKF,
+#     var_r,
+#     var_phi,
+#     dt,
+#     alpha,
+#     2,
+#     0,
+#     1000,
+# )
 
 # # Another with high sigma
 # range_sigma = 10

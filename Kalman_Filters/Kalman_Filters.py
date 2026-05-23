@@ -54,6 +54,75 @@ class KalmanFilter:
         return self.x
 
 
+class UCMKalmanFilter:
+    """
+    Unbiased Converted Measurement Kalman filter class.
+
+    inputs:
+        F: State transition matrix (system model)
+        H: Observation matrix
+        R: Measurement noise covariance TODO: figure out appropriate values 1
+        x0: Initial state estimate
+            state vector:
+                |    x         |
+                |    y         |
+                |  x_dot (vx)  |
+                |_ y_dot (vy) _|
+        Q: Process noise covariance (uncertainty in the process)  TODO: figure out appropriate values 2
+        P0: Initial Error covariance (needs to be a large value)
+
+    Methods:
+        predict: predicts a new state based on current state.
+
+        update: updates the estimate using the measurement and the kalman gain.
+            z: Measurement (cartesian coordinates)
+    """
+
+    def __init__(self, F, H, Q, sigma_r, sigma_phi, x0, P0):
+        self.F = F
+        self.H = H
+        self.Q = Q
+        self.sigma_r = sigma_r
+        self.labda_phi = np.exp(-1 * (sigma_phi**2) / 2)
+        self.x = x0
+        self.P = P0
+
+    def predict(self):
+        self.x = np.dot(self.F, self.x)
+        self.P = np.dot(self.F, np.dot(self.P, self.F.T)) + self.Q
+        return self.x
+
+    def update(self, z):
+        z = z.flatten()
+
+        # compute R
+        rxx = (self.labda_phi ** (-2) - 2) * z[0] ** 2 * np.cos(z[1]) ** 2 + 0.5 * (
+            z[0] ** 2 + self.sigma_r**2
+        ) * (1 + self.labda_phi**4 * np.cos(2 * z[1]))
+        ryy = (self.labda_phi ** (-2) - 2) * z[0] ** 2 * np.sin(z[1]) ** 2 + 0.5 * (
+            z[0] ** 2 + self.sigma_r**2
+        ) * (1 - self.labda_phi**4 * np.cos(2 * z[1]))
+        rxy = (self.labda_phi ** (-2) - 2) * z[0] ** 2 * np.cos(z[1]) * np.sin(
+            z[1]
+        ) + 0.5 * (z[0] ** 2 + self.sigma_r**2) * self.labda_phi**4 * np.sin(
+            2 * z[1]
+        )
+        self.R = np.array([[rxx, rxy], [rxy, ryy]])
+
+        # convert z
+        z_converted = np.zeros((2, 1))
+        z_converted[0, 0] = self.labda_phi**-1 * z[0] * np.cos(z[1])
+        z_converted[1, 0] = self.labda_phi**-1 * z[0] * np.sin(z[1])
+
+        S = np.dot(self.H, np.dot(self.P, self.H.T)) + self.R
+        K = np.dot(np.dot(self.P, self.H.T), np.linalg.inv(S))
+        y = z_converted - np.dot(self.H, self.x)
+        self.x = self.x + np.dot(K, y)
+        I = np.eye(self.P.shape[0])
+        self.P = np.dot(I - np.dot(K, self.H), self.P)
+        return self.x
+
+
 class ExtendedKalmanFilter:
     """
     Extended Kalman filter class.
