@@ -165,15 +165,21 @@ def RunUnscentedKalman(
 
 
 def RunJointKalman(
+    f_matrix,
     f,
+    h_matrix,
     h,
     F,
     H,
+    Q_UCMKF,
     Q_EKF,
     Q_UKF,
     R_EKF,
     R_UKF,
+    sigma_r,
+    sigma_phi,
     x0,
+    P0_UCMKF,
     P0_EKF,
     P0_UKF,
     alpha,
@@ -184,15 +190,26 @@ def RunJointKalman(
     polar=True,
 ):
     # Define the kalman filters.
+    UCMKF = UCMKalmanFilter(
+        f_matrix, h_matrix, Q_UCMKF, sigma_r, sigma_phi, x0, P0_UCMKF
+    )
     EKF = ExtendedKalmanFilter(f, h, F, H, Q_EKF, R_EKF, x0, P0_EKF)
     UKF = UnscentedKalmanFilter(f, h, Q_UKF, R_UKF, x0, P0_UKF, alpha, beta, kappa)
 
     # Initialize the history arrays.
     x_history_ekf = np.zeros((6, len(measurements[0, :])))
     x_history_ukf = np.zeros((6, len(measurements[0, :])))
+    x_history_ucmkf = np.zeros((6, len(measurements[0, :])))
 
     # Iterate over measurements to implement the recursive structure.
     for i in range(len(measurements[0, :])):
+        UCMKF.predict()
+        UCMKF.update(measurements[:, i].reshape(2, 1))
+
+        x_history_ucmkf[:, i] = UCMKF.x.reshape(
+            6,
+        )
+
         EKF.predict()
         EKF.update(measurements[:, i].reshape(2, 1))
 
@@ -207,6 +224,7 @@ def RunJointKalman(
             6,
         )
 
+    average_ospa_ucmkf = get_average_ospa(x_history_ucmkf, trueTrack)
     average_ospa_ekf = get_average_ospa(x_history_ekf, trueTrack)
     average_ospa_ukf = get_average_ospa(x_history_ukf, trueTrack)
 
@@ -224,8 +242,10 @@ def RunJointKalman(
         animate_TrackJointKalmanMeasurements(
             trueTrack,
             plot_measurements,
+            x_history_ucmkf,
             x_history_ekf,
             x_history_ukf,
+            average_ospa_ucmkf,
             average_ospa_ekf,
             average_ospa_ukf,
             dt=0.5,
@@ -233,10 +253,12 @@ def RunJointKalman(
 
     else:
         plotJointKalman(
+            x_history_ucmkf,
             x_history_ekf,
             x_history_ukf,
             measurements,
             trueTrack,
+            average_ospa_ucmkf,
             average_ospa_ekf,
             average_ospa_ukf,
         )

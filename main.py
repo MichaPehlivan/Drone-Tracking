@@ -159,35 +159,30 @@ P0_UKF = 0.02300487 * P0
 alpha = 0.000100479
 
 # animate_track(trueTrack, dt=dt)
-RunConvertedKalman(
+RunJointKalman(
     f_matrix,
+    f,
     h_cartesian_matrix,
+    h_polar,
+    F,
+    H_polar,
     Q,
+    Q_EKF,
+    Q_UKF,
+    R_EKF,
+    R_UKF,
     range_sigma,
     azimuth_sigma,
     x0,
     P0,
+    P0_EKF,
+    P0_UKF,
+    2.0,
+    2,
+    0,
     measurements,
     trueTrack,
 )
-# RunJointKalman(
-#     f,
-#     h_polar,
-#     F,
-#     H_polar,
-#     Q_EKF,
-#     Q_UKF,
-#     R_EKF,
-#     R_UKF,
-#     x0,
-#     P0_EKF,
-#     P0_UKF,
-#     2.0,
-#     2,
-#     0,
-#     measurements,
-#     trueTrack,
-# )
 # TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 10)
 # TuneUKF(f, h_polar, x0, var_r, var_phi, dt, 2, 0, 10)
 # optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 1000)

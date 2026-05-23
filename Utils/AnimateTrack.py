@@ -131,7 +131,15 @@ def animate_TrackKalmanMeasurements(trueTrack, measurements, x_history, OSPA, dt
 
 
 def animate_TrackJointKalmanMeasurements(
-    trueTrack, measurements, x_history_ekf, x_history_ukf, OSPA_EKF, OSPA_UKF, dt
+    trueTrack,
+    measurements,
+    x_history_ucmkf,
+    x_history_ekf,
+    x_history_ukf,
+    OSPA_UCMKF,
+    OSPA_EKF,
+    OSPA_UKF,
+    dt,
 ):
     # Function expects everything in cartesian coordinates.
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -142,12 +150,14 @@ def animate_TrackJointKalmanMeasurements(
     ax.set_xlabel("X Position (m)")
     ax.set_ylabel("Y Position (m)")
     ax.set_title(
-        "Tracking Performance: Truth vs. EKF vs. UKF vs. Measurements", fontsize=16
+        "Tracking Performance: Truth vs. UCMKF vs. EKF vs. UKF vs. Measurements",
+        fontsize=16,
     )
 
     (line_true,) = ax.plot([], [], "g--", alpha=0.4, label="True Path")
     (point_true,) = ax.plot([], [], "go", markersize=6, label="True Object")
 
+    (line_ucmkf,) = ax.plot([], [], "m-", linewidth=2, label="UCMKF Track")
     (line_ekf,) = ax.plot([], [], "b-", linewidth=2, label="EKF Track")
     (line_ukf,) = ax.plot([], [], "r-", linewidth=2, label="UKF Track")
 
@@ -157,6 +167,15 @@ def animate_TrackJointKalmanMeasurements(
 
     time_text = ax.text(0.02, 0.95, "", transform=ax.transAxes, weight="bold")
 
+    ax.text(
+        0.98,
+        0.15,
+        f"Average OSPA UCMKF: {OSPA_UCMKF:.3f}",
+        transform=ax.transAxes,
+        verticalalignment="bottom",
+        horizontalalignment="right",
+        fontsize=16,
+    )
     ax.text(
         0.98,
         0.1,
@@ -181,11 +200,20 @@ def animate_TrackJointKalmanMeasurements(
     def init():
         line_true.set_data([], [])
         point_true.set_data([], [])
+        line_ucmkf.set_data([], [])
         line_ekf.set_data([], [])
         line_ukf.set_data([], [])
         meas_point.set_data([], [])
         time_text.set_text("")
-        return line_true, point_true, line_ekf, line_ukf, meas_point, time_text
+        return (
+            line_true,
+            point_true,
+            line_ucmkf,
+            line_ekf,
+            line_ukf,
+            meas_point,
+            time_text,
+        )
 
     def update(frame):
 
@@ -195,6 +223,10 @@ def animate_TrackJointKalmanMeasurements(
 
         if frame > 0:
             point_true.set_data([trueTrack[0, frame - 1]], [trueTrack[1, frame - 1]])
+
+        x_ucmkf = x_history_ucmkf[0, :frame]
+        y_ucmkf = x_history_ucmkf[1, :frame]
+        line_ucmkf.set_data(x_ucmkf, y_ucmkf)
 
         x_ekf = x_history_ekf[0, :frame]
         y_ekf = x_history_ekf[1, :frame]
@@ -212,7 +244,15 @@ def animate_TrackJointKalmanMeasurements(
 
         time_text.set_text(f"Time: {frame * dt:.1f}s")
 
-        return line_true, point_true, line_ekf, line_ukf, meas_point, time_text
+        return (
+            line_true,
+            point_true,
+            line_ucmkf,
+            line_ekf,
+            line_ukf,
+            meas_point,
+            time_text,
+        )
 
     ani = FuncAnimation(
         fig,
