@@ -3,6 +3,7 @@ import itertools
 import random
 
 import numpy as np
+import optuna
 
 from Evaluation_Metrics.Single_Target_Evaluation import mean_ospa_stonesoup
 from Kalman_Filters import UnscentedKalmanFilter
@@ -143,3 +144,140 @@ def TuneUKF_stonesoup(
 
     min_params = min((k for k in scores if scores[k] != 0), key=lambda k: scores[k])
     print(f"Minimum OSPA for UKF = {scores[min_params]}, with {min_params}")
+
+
+def optimize_UKF_stonesoup(
+    f,
+    h,
+    x0,
+    beta,
+    kappa,
+    var_r,
+    var_phi,
+    dt,
+    start_time,
+    shared_config,
+    drones_params,
+    N,
+):
+    Q_base = 1.0 * np.array(
+        [
+            [(dt**5) / 20, 0, (dt**4) / 8, 0, (dt**3) / 6, 0],
+            [0, (dt**5) / 20, 0, (dt**4) / 8, 0, (dt**3) / 6],
+            [(dt**4) / 8, 0, (dt**3) / 3, 0, (dt**2) / 2, 0],
+            [0, (dt**4) / 8, 0, (dt**3) / 3, 0, (dt**2) / 2],
+            [(dt**3) / 6, 0, (dt**2) / 2, 0, dt, 0],
+            [0, (dt**3) / 6, 0, (dt**2) / 2, 0, dt],
+        ]
+    )
+
+    R_base = 1 * np.array([[var_r, 0], [0, var_phi]])
+
+    P0_base = 1 * np.eye(6)
+
+    evaluation_data = []
+    for _ in range(N):
+        detections, groundTruths = SimulatorPolarMultitarget_stonesoup(
+            **shared_config, drone_configs=drones_params
+        )
+        evaluation_data.append((detections, groundTruths))
+
+    def objective(trial):
+        # Sample parameters continuously on a log scale
+        Q_mul = trial.suggest_float("|Q|", 1e-4, 1e3, log=True)
+        R_mul = trial.suggest_float("|R|", 1e-4, 1e3, log=True)
+        P0_mul = trial.suggest_float("|P0|", 1e-4, 1e3, log=True)
+        alpha = trial.suggest_float("alpha", 1e-4, 1e3, log=True)
+
+        Q = Q_base * Q_mul
+        R = R_base * R_mul
+        P0 = P0_base * P0_mul
+
+        total_ospa = 0
+        for detections, ground_truths in evaluation_data:
+            ukf = UnscentedKalmanFilter(
+                f=f,
+                h=h,
+                Q=Q,
+                R=R,
+                x0=x0,
+                P0=P0,
+                alpha=alpha,
+                beta=beta,
+                kappa=kappa,
+            )
+
+            predictor = UKFPredictor(ukf=ukf)
+            updater = UKFUpdater(ukf=ukf)
+
+            prior = GaussianState(
+                state_vector=x0,
+                covar=ukf.P,
+                timestamp=start_time,
+            )
+
+            hypothesiser = DistanceHypothesiser(
+                predictor, updater, measure=Mahalanobis(), missed_distance=5
+            )
+
+            data_associator = GlobalNearestNeighbour(hypothesiser)
+
+            deleter = UpdateTimeStepsDeleter(time_steps_since_update=3)
+
+            initiator = MultiMeasurementInitiator(
+                prior_state=prior,  # dummy
+                deleter=deleter,
+                data_associator=data_associator,
+                updater=updater,
+                min_points=4,
+            )
+
+            tracks, all_tracks = set(), set()
+            timesteps = []
+
+            # Iterate over measurements to implement the recursive structure.
+            try:
+                for n, measurements in enumerate(detections):
+
+                    timestamp = start_time + timedelta(seconds=dt * n)
+                    timesteps.append(timestamp)
+                    hypotheses = data_associator.associate(
+                        tracks, measurements, timestamp
+                    )
+                    associated_measurements = set()
+
+                    for track in tracks:
+                        hypothesis = hypotheses[track]
+
+                        if hypothesis.measurement:
+                            post = updater.update(hypothesis)
+                            track.append(post)
+
+                            associated_measurements.add(hypothesis.measurement)
+
+                        else:
+                            track.append(hypothesis.prediction)
+
+                    tracks -= deleter.delete_tracks(tracks)
+                    tracks |= initiator.initiate(
+                        measurements - associated_measurements,
+                        start_time + timedelta(seconds=dt * n),
+                    )
+                    all_tracks |= tracks
+
+                total_ospa += mean_ospa_stonesoup(
+                    track=all_tracks, ground_truth=ground_truths
+                )
+            except np.linalg.LinAlgError:
+                # Penalize failed filter runs heavily so the optimizer avoids this region
+                return float("inf")
+
+        return total_ospa / len(evaluation_data)
+
+    # Create and run the study
+    study = optuna.create_study(direction="minimize")
+    study.optimize(
+        objective, n_trials=100, n_jobs=-1
+    )  # 100 intelligent guesses instead of 512 blind ones
+
+    print(f"Minimum OSPA for UKF = {study.best_value}, with {study.best_params}")

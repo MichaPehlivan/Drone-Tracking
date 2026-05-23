@@ -59,7 +59,7 @@ class UKFUpdater(Updater):
         # Extract measurement vector
         z = np.array(measurement.state_vector).flatten()
 
-        x_updated, _, _ = self.ukf.update(z)
+        x_updated = self.ukf.update(z)
 
         return GaussianStateUpdate(
             state_vector=StateVector(x_updated.reshape(-1, 1)),
