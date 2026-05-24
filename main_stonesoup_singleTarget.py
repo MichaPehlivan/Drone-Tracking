@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import datetime
 
 # Internal Packages
-from Evaluation_Metrics import average_ospa_stonesoup
+from Evaluation_Metrics import mean_ospa_stonesoup, ospa_stonesoup
 from Kalman_Filters import UnscentedKalmanFilter
 from Utils.KalmanTuner import TuneEKF, TuneUKF
 from Track_Simulation import (
@@ -177,7 +177,7 @@ for detection_set in detections:
         prior = posterior
 
 
-avg_ospa = average_ospa_stonesoup(track=track, ground_truth=ground_truth)
+avg_ospa = mean_ospa_stonesoup(track=[track], ground_truth=[ground_truth])
 
 plotter = Plotter()
 plotter.plot_ground_truths({ground_truth}, [0, 3])  # indices of x,y in state vector
