@@ -213,86 +213,70 @@ initiator = MultiMeasurementInitiator(
 #         prior = posterior
 
 
-# tracks, all_tracks = set(), set()
-# timesteps = []
+tracks, all_tracks = set(), set()
+timesteps = []
 
-# for n, measurements in enumerate(detections):
+for n, measurements in enumerate(detections):
 
-#     timestamp = start_time + timedelta(seconds=dt * n)
-#     timesteps.append(timestamp)
-#     hypotheses = data_associator.associate(tracks, measurements, timestamp)
-#     associated_measurements = set()
+    timestamp = start_time + timedelta(seconds=dt * n)
+    timesteps.append(timestamp)
+    hypotheses = data_associator.associate(tracks, measurements, timestamp)
+    associated_measurements = set()
 
-#     for track in tracks:
-#         hypothesis = hypotheses[track]
+    for track in tracks:
+        hypothesis = hypotheses[track]
 
-#         if hypothesis.measurement:
-#             post = updater.update(hypothesis)
-#             track.append(post)
+        if hypothesis.measurement:
+            post = updater.update(hypothesis)
+            track.append(post)
 
-#             associated_measurements.add(hypothesis.measurement)
+            associated_measurements.add(hypothesis.measurement)
 
-#         else:
-#             track.append(hypothesis.prediction)
+        else:
+            track.append(hypothesis.prediction)
+
+    tracks -= deleter.delete_tracks(tracks)
+    tracks |= initiator.initiate(
+        measurements - associated_measurements, start_time + timedelta(seconds=dt * n)
+    )
+    all_tracks |= tracks
 
 
-#     tracks -= deleter.delete_tracks(tracks)
-#     tracks |= initiator.initiate(
-#         measurements - associated_measurements, start_time + timedelta(seconds=dt * n)
-#     )
-#     all_tracks |= tracks
+ospa_stonesoup(track=all_tracks, ground_truth=ground_truths)
 
-
-# ospa_stonesoup(track=all_tracks, ground_truth=ground_truths)
-
-# # Plotting
-# plotter = Plotter()
-# plotter.plot_ground_truths(ground_truths, [0, 3])  # indices of x,y in state vector
-# plotter.plot_tracks(all_tracks, [0, 3])
-# plotter.plot_measurements(
-#     [det for det_set in detections for det in det_set],
-#     [0, 3],
-#     measurement_model=measurement_model
-# )
-# # plt.text(0.05, 0.95, f"Average OSPA: {avg_ospa:.2f}m",
-# #          transform=plt.gca().transAxes,
-# #          fontsize=12,
-# #          verticalalignment='top',
-# #          bbox=dict(boxstyle='round', facecolor='white', alpha=0.5))
-
-# ax = plt.gca()
-# x_min, x_max = ax.get_xlim()
-# y_min, y_max = ax.get_ylim()
-# data_min = min(x_min, y_min)
-# data_max = max(x_max, y_max)
-# ax.set_xlim(data_min, data_max)
-# ax.set_ylim(data_min, data_max)
-# ax.set_aspect("equal", adjustable="box")
-
-# plt.grid()
-# plotter.fig.show()
-# plt.show()
-
-# from stonesoup.plotter import AnimatedPlotterly
-
-# plotter = AnimatedPlotterly(timesteps, tail_length=1)
-
-# plotter.plot_tracks(all_tracks, [0, 3], uncertainty=True)
-# plotter.plot_ground_truths(ground_truths, [0, 3])
-# # plotter.plot_measurements(detections, [0, 3])
-# plotter.fig.show()
-
-optimize_UKF_stonesoup(
-    f,
-    h_polar,
-    x0,
-    2,
-    0,
-    var_r,
-    var_phi,
-    dt,
-    start_time,
-    shared_config,
-    drones_params,
-    100,
+# Plotting
+plotter = Plotter()
+plotter.plot_ground_truths(ground_truths, [0, 3])  # indices of x,y in state vector
+plotter.plot_tracks(all_tracks, [0, 3])
+plotter.plot_measurements(
+    [det for det_set in detections for det in det_set],
+    [0, 3],
+    measurement_model=measurement_model,
 )
+# plt.text(0.05, 0.95, f"Average OSPA: {avg_ospa:.2f}m",
+#          transform=plt.gca().transAxes,
+#          fontsize=12,
+#          verticalalignment='top',
+#          bbox=dict(boxstyle='round', facecolor='white', alpha=0.5))
+
+ax = plt.gca()
+x_min, x_max = ax.get_xlim()
+y_min, y_max = ax.get_ylim()
+data_min = min(x_min, y_min)
+data_max = max(x_max, y_max)
+ax.set_xlim(data_min, data_max)
+ax.set_ylim(data_min, data_max)
+ax.set_aspect("equal", adjustable="box")
+
+plt.grid()
+plotter.fig.show()
+plt.show()
+
+from stonesoup.plotter import AnimatedPlotterly
+
+plotter = AnimatedPlotterly(timesteps, tail_length=1)
+
+plotter.plot_tracks(all_tracks, [0, 3], uncertainty=True)
+plotter.plot_ground_truths(ground_truths, [0, 3])
+# plotter.plot_measurements(detections, [0, 3])
+plotter.fig.show()
