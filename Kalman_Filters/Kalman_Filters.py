@@ -279,9 +279,9 @@ class UnscentedKalmanFilter:
         dx = transformed_sigma_points - self.x
         self.P = np.dot((self.wc * dx.T), dx) + self.Q
 
-        return self.x, transformed_sigma_points
+        return self.x
 
-    def update(self, transformed_sigma_points, z):
+    def update(self, z):
         z = z.flatten()
 
         # recompute sigma points from most recent estimate

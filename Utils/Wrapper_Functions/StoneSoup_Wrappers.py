@@ -32,7 +32,7 @@ class UKFPredictor(Predictor):
         self.ukf.x = np.array(prior.mean).flatten()
         self.ukf.P = np.array(prior.covar)
 
-        x_pred, sigma_points = self.ukf.predict()
+        x_pred = self.ukf.predict()
 
         return GaussianStatePrediction(
             state_vector=StateVector(x_pred.reshape(-1, 1)),
@@ -59,10 +59,7 @@ class UKFUpdater(Updater):
         # Extract measurement vector
         z = np.array(measurement.state_vector).flatten()
 
-        # Recompute sigma points from current predicted state
-        sigma_points = self.ukf.generate_sigma_points(self.ukf.x, self.ukf.P)
-
-        x_updated = self.ukf.update(sigma_points, z)
+        x_updated = self.ukf.update(z)
 
         return GaussianStateUpdate(
             state_vector=StateVector(x_updated.reshape(-1, 1)),
