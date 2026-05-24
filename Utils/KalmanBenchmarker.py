@@ -193,8 +193,7 @@ def BenchmarkUKF_stonesoup(
     print("Benchmarking UKF on random acceleration track")
     total_ospa = 0
     failed = False
-    for i in range(N):
-        print(i)
+    for _ in range(N):
         detections, groundTruths = SimulatorPolarMultitarget_stonesoup(
             **shared_config, drone_configs=drones_params
         )
