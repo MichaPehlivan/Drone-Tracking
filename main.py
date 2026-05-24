@@ -156,15 +156,88 @@ measurements, trueTrack = simulateRandomAccelTrackPolar(
 #     sigma_phi=azimuth_sigma,
 # )
 
-Q_UCMKF = 0.54100675 * Q
-P0_UCMKF = 0.44446037 * P0
-Q_EKF = 0.005384 * Q
-R_EKF = 0.0099066 * R
-P0_EKF = 0.0036077 * P0
-Q_UKF = 0.01317168 * Q
-R_UKF = 0.0320059 * R
-P0_UKF = 0.02300487 * P0
-alpha = 0.000100479
+Q_UCMKF = 0.5651266374815751 * Q
+P0_UCMKF = 0.5326018875626138 * P0
+Q_EKF = 4.759747414526448 * Q
+R_EKF = 4.15905619206011 * R
+P0_EKF = 0.8539349359398827 * P0
+Q_UKF = 0.005917359871277248 * Q
+R_UKF = 0.01368247610843965 * R
+P0_UKF = 0.019883725415176096 * P0
+alpha = 0.5615697188642643
+
+# animate_track(trueTrack, dt=dt)
+RunJointKalman(
+    f_matrix,
+    f,
+    h_cartesian_matrix,
+    h_polar,
+    F,
+    H_polar,
+    Q_UCMKF,
+    Q_EKF,
+    Q_UKF,
+    R_EKF,
+    R_UKF,
+    range_sigma,
+    azimuth_sigma,
+    x0,
+    P0_UCMKF,
+    P0_EKF,
+    P0_UKF,
+    2.0,
+    2,
+    0,
+    measurements,
+    trueTrack,
+)
+# TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 10)
+# TuneUKF(f, h_polar, x0, var_r, var_phi, dt, 2, 0, 10)
+# optimize_UCMKF(f_matrix, h_cartesian_matrix, x0, range_sigma, azimuth_sigma, dt, 1000)
+# optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 1000)
+# optimize_UKF(f, h_polar, x0, 2, 0, var_r, var_phi, dt, 1000)
+
+# BenchmarkJoint(
+#     f_matrix,
+#     f,
+#     F,
+#     h_cartesian_matrix,
+#     h_polar,
+#     H_polar,
+#     Q_UCMKF,
+#     Q_EKF,
+#     Q_UKF,
+#     R_EKF,
+#     R_UKF,
+#     x0,
+#     P0_UCMKF,
+#     P0_EKF,
+#     P0_UKF,
+#     range_sigma,
+#     azimuth_sigma,
+#     dt,
+#     alpha,
+#     2,
+#     0,
+#     1000,
+# )
+
+# # Another with high sigma
+# range_sigma = 10
+# azimuth_sigma = np.deg2rad(5)
+# var_r = range_sigma**2
+# var_phi = azimuth_sigma**2
+# R = 1 * np.array([[var_r, 0], [0, var_phi]])
+# measurements, trueTrack = simulateRandomAccelTrackPolar(
+#     v_x=1,
+#     v_y=1,
+#     x0=x_initial,
+#     y0=y_initial,
+#     num_datapoints=num_datapoints,
+#     dt=dt,
+#     sigma_r=range_sigma,
+#     sigma_phi=azimuth_sigma,
+# )
 
 # animate_track(trueTrack, dt=dt)
 # RunJointKalman(
@@ -190,58 +263,6 @@ alpha = 0.000100479
 #     0,
 #     measurements,
 #     trueTrack,
-# )
-# TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 10)
-# TuneUKF(f, h_polar, x0, var_r, var_phi, dt, 2, 0, 10)
-# optimize_UCMKF(f_matrix, h_cartesian_matrix, x0, range_sigma, azimuth_sigma, dt, 1000)
-# optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 1000)
-# optimize_UKF(f, h_polar, x0, 2, 0, var_r, var_phi, dt, 1000)
-
-BenchmarkJoint(
-    f_matrix,
-    f,
-    F,
-    h_cartesian_matrix,
-    h_polar,
-    H_polar,
-    Q_UCMKF,
-    Q_EKF,
-    Q_UKF,
-    R_EKF,
-    R_UKF,
-    x0,
-    P0_UCMKF,
-    P0_EKF,
-    P0_UKF,
-    range_sigma,
-    azimuth_sigma,
-    dt,
-    alpha,
-    2,
-    0,
-    1000,
-)
-
-# # Another with high sigma
-# range_sigma = 10
-# azimuth_sigma = np.deg2rad(5)
-# var_r = range_sigma**2
-# var_phi = azimuth_sigma**2
-# R = 1 * np.array([[var_r, 0], [0, var_phi]])
-# measurements, trueTrack = simulateRandomAccelTrackPolar(
-#     v_x=1,
-#     v_y=1,
-#     x0=x_initial,
-#     y0=y_initial,
-#     num_datapoints=num_datapoints,
-#     dt=dt,
-#     sigma_r=range_sigma,
-#     sigma_phi=azimuth_sigma,
-# )
-
-# animate_track(trueTrack, dt=dt)
-# RunJointKalman(
-#     f, h_polar, F, H_polar, Q, R, x0, P0, 0.01, 2, 0, measurements, trueTrack
 # )
 # TuneEKF(f, h_polar, F, H_polar, x0, var_r, var_phi, measurements, trueTrack)
 # TuneUKF(f, h_polar, x0, var_r, var_phi, 2, 0, measurements, trueTrack)

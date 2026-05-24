@@ -24,7 +24,7 @@ This function calculates the average OSPA distance for a single track using the 
 
 def get_average_ospa(x_history, trueTrack):
 
-    ospa_calc = OSPAMetric(p=1, c=10.0)
+    ospa_calc = OSPAMetric(p=2, c=10.0)
     ospa_values = []
 
     for k in range(x_history.shape[1]):
