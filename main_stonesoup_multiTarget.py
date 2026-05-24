@@ -14,6 +14,7 @@ from Track_Simulation import (
     simulateRandomAccelHoverTrackPolar,
 )
 from Utils.KalmanTuner_stonesoup import TuneUKF_stonesoup, optimize_UKF_stonesoup
+from Utils.KalmanBenchmarker import BenchmarkUKF_stonesoup
 from Utils.Wrapper_Functions import (
     SimulatorPolar_stonesoup,
     SimulatorPolarMultitarget_stonesoup,
@@ -92,9 +93,7 @@ H_polar = lambda x: np.array(
     ]
 )
 
-# Q = 0.01 * np.eye(6)
-var_a = 0.25
-Q1D_generator = lambda dt: var_a * np.array(
+Q1D_generator = lambda dt: np.array(
     [
         [(dt**5 / 20), (dt**4 / 8), (dt**3 / 6)],
         [(dt**4 / 8), (dt**3 / 3), (dt**2 / 2)],
@@ -110,14 +109,20 @@ Q = Q_generator(dt)
 
 x0 = np.array([[x_initial], [1], [0], [y_initial], [1], [0]])
 # Constant acceleration (CA)
-P0 = 10 * np.eye(6)
+P0 = np.eye(6)
 
 range_sigma = 1
 azimuth_sigma = np.deg2rad(3)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
 
-R = 1 * np.array([[var_phi, 0], [0, var_r]])
+R = np.array([[var_phi, 0], [0, var_r]])
+
+# tuning
+Q_UKF = 0.005917359871277248 * Q
+R_UKF = 0.01368247610843965 * R
+P0_UKF = 0.019883725415176096 * P0
+alpha = 0.5615697188642643
 
 # Define measurement_model
 measurement_model = CartesianToBearingRange(ndim_state=6, mapping=(0, 3), noise_covar=R)
@@ -195,88 +200,102 @@ initiator = MultiMeasurementInitiator(
     min_points=4,
 )
 
+# optimize_UKF_stonesoup(
+#     f,
+#     h_polar,
+#     x0,
+#     2,
+#     0,
+#     var_r,
+#     var_phi,
+#     dt,
+#     start_time,
+#     shared_config,
+#     drones_params,
+#     1000,
+# )
 
-# for detection_set in detections:
-#     for detection in detection_set:
-#
-#         timestamp += datetime.timedelta(seconds=dt)
-#
-#         prediction = predictor.predict(prior, timestamp=timestamp)
-#
-#
-#         hypothesis = SingleHypothesis(prediction=prediction, measurement=detection)
-#
-#         posterior = updater.update(hypothesis)
-#
-#         track.append(posterior)
-#
-#         prior = posterior
-
-
-tracks, all_tracks = set(), set()
-timesteps = []
-
-for n, measurements in enumerate(detections):
-
-    timestamp = start_time + timedelta(seconds=dt * n)
-    timesteps.append(timestamp)
-    hypotheses = data_associator.associate(tracks, measurements, timestamp)
-    associated_measurements = set()
-
-    for track in tracks:
-        hypothesis = hypotheses[track]
-
-        if hypothesis.measurement:
-            post = updater.update(hypothesis)
-            track.append(post)
-
-            associated_measurements.add(hypothesis.measurement)
-
-        else:
-            track.append(hypothesis.prediction)
-
-    tracks -= deleter.delete_tracks(tracks)
-    tracks |= initiator.initiate(
-        measurements - associated_measurements, start_time + timedelta(seconds=dt * n)
-    )
-    all_tracks |= tracks
-
-
-ospa_stonesoup(track=all_tracks, ground_truth=ground_truths)
-
-# Plotting
-plotter = Plotter()
-plotter.plot_ground_truths(ground_truths, [0, 3])  # indices of x,y in state vector
-plotter.plot_tracks(all_tracks, [0, 3])
-plotter.plot_measurements(
-    [det for det_set in detections for det in det_set],
-    [0, 3],
-    measurement_model=measurement_model,
+BenchmarkUKF_stonesoup(
+    f,
+    h_polar,
+    Q_UKF,
+    R_UKF,
+    x0,
+    P0_UKF,
+    alpha,
+    2,
+    0,
+    dt,
+    start_time,
+    shared_config,
+    drones_params,
+    100,
 )
-# plt.text(0.05, 0.95, f"Average OSPA: {avg_ospa:.2f}m",
-#          transform=plt.gca().transAxes,
-#          fontsize=12,
-#          verticalalignment='top',
-#          bbox=dict(boxstyle='round', facecolor='white', alpha=0.5))
 
-ax = plt.gca()
-x_min, x_max = ax.get_xlim()
-y_min, y_max = ax.get_ylim()
-data_min = min(x_min, y_min)
-data_max = max(x_max, y_max)
-ax.set_xlim(data_min, data_max)
-ax.set_ylim(data_min, data_max)
-ax.set_aspect("equal", adjustable="box")
+# tracks, all_tracks = set(), set()
+# timesteps = []
 
-plt.grid()
-plotter.fig.show()
-plt.show()
+# for n, measurements in enumerate(detections):
 
-from stonesoup.plotter import AnimatedPlotterly
+#     timestamp = start_time + timedelta(seconds=dt * n)
+#     timesteps.append(timestamp)
+#     hypotheses = data_associator.associate(tracks, measurements, timestamp)
+#     associated_measurements = set()
 
-plotter = AnimatedPlotterly(timesteps, tail_length=1)
+#     for track in tracks:
+#         hypothesis = hypotheses[track]
 
-plotter.plot_tracks(all_tracks, [0, 3], uncertainty=True)
-plotter.plot_ground_truths(ground_truths, [0, 3])
-# plotter.plot_measurements(detections, [0, 3])
-plotter.fig.show()
+#         if hypothesis.measurement:
+#             post = updater.update(hypothesis)
+#             track.append(post)
+
+#             associated_measurements.add(hypothesis.measurement)
+
+#         else:
+#             track.append(hypothesis.prediction)
+
+#     tracks -= deleter.delete_tracks(tracks)
+#     tracks |= initiator.initiate(
+#         measurements - associated_measurements, start_time + timedelta(seconds=dt * n)
+#     )
+#     all_tracks |= tracks
+
+
+# ospa_stonesoup(track=all_tracks, ground_truth=ground_truths)
+
+# # Plotting
+# plotter = Plotter()
+# plotter.plot_ground_truths(ground_truths, [0, 3])  # indices of x,y in state vector
+# plotter.plot_tracks(all_tracks, [0, 3])
+# plotter.plot_measurements(
+#     [det for det_set in detections for det in det_set],
+#     [0, 3],
+#     measurement_model=measurement_model,
+# )
+# # plt.text(0.05, 0.95, f"Average OSPA: {avg_ospa:.2f}m",
+# #          transform=plt.gca().transAxes,
+# #          fontsize=12,
+# #          verticalalignment='top',
+# #          bbox=dict(boxstyle='round', facecolor='white', alpha=0.5))
+
+# ax = plt.gca()
+# x_min, x_max = ax.get_xlim()
+# y_min, y_max = ax.get_ylim()
+# data_min = min(x_min, y_min)
+# data_max = max(x_max, y_max)
+# ax.set_xlim(data_min, data_max)
+# ax.set_ylim(data_min, data_max)
+# ax.set_aspect("equal", adjustable="box")
+
+# plt.grid()
+# plotter.fig.show()
+# plt.show()
+
+# from stonesoup.plotter import AnimatedPlotterly
+
+# plotter = AnimatedPlotterly(timesteps, tail_length=1)
+
+# plotter.plot_tracks(all_tracks, [0, 3], uncertainty=True)
+# plotter.plot_ground_truths(ground_truths, [0, 3])
+# # plotter.plot_measurements(detections, [0, 3])
+# plotter.fig.show()

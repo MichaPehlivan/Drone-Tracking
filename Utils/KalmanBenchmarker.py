@@ -1,8 +1,25 @@
+from datetime import timedelta
+
 import numpy as np
 
 from Evaluation_Metrics.Single_Target_Evaluation import get_average_ospa
 from Kalman_Filters import UCMKalmanFilter, ExtendedKalmanFilter, UnscentedKalmanFilter
 from Track_Simulation import simulateRandomAccelTrackPolar, simulateLinearTrackPolar
+from Utils.Wrapper_Functions.StoneSoup_Wrappers import (
+    SimulatorPolarMultitarget_stonesoup,
+    UKFPredictor,
+    UKFUpdater,
+)
+from Evaluation_Metrics.Single_Target_Evaluation import mean_ospa_stonesoup
+from Kalman_Filters import UnscentedKalmanFilter
+from Utils.Wrapper_Functions import SimulatorPolarMultitarget_stonesoup
+from Utils.Wrapper_Functions import UKFPredictor, UKFUpdater
+from stonesoup.types.state import GaussianState
+from stonesoup.dataassociator.neighbour import GlobalNearestNeighbour
+from stonesoup.deleter.time import UpdateTimeStepsDeleter
+from stonesoup.initiator.simple import MultiMeasurementInitiator
+from stonesoup.measures import Mahalanobis
+from stonesoup.hypothesiser.distance import DistanceHypothesiser
 
 
 def BenchmarkEKF(f, h, F, H, Q, R, x0, P0, var_r, var_phi, dt, N):
@@ -154,6 +171,113 @@ def BenchmarkUKF(f, h, Q, R, x0, P0, var_r, var_phi, dt, alpha, beta, kappa, N):
     else:
         print(
             f"Average OSPA for UKF = {average_score / N} over {N} random acceleration tracks"
+        )
+
+
+def BenchmarkUKF_stonesoup(
+    f,
+    h,
+    Q,
+    R,
+    x0,
+    P0,
+    alpha,
+    beta,
+    kappa,
+    dt,
+    start_time,
+    shared_config,
+    drones_params,
+    N,
+):
+    print("Benchmarking UKF on random acceleration track")
+    total_ospa = 0
+    failed = False
+    for i in range(N):
+        print(i)
+        detections, groundTruths = SimulatorPolarMultitarget_stonesoup(
+            **shared_config, drone_configs=drones_params
+        )
+        ukf = UnscentedKalmanFilter(
+            f=f,
+            h=h,
+            Q=Q,
+            R=R,
+            x0=x0,
+            P0=P0,
+            alpha=alpha,
+            beta=beta,
+            kappa=kappa,
+        )
+
+        predictor = UKFPredictor(ukf=ukf)
+        updater = UKFUpdater(ukf=ukf)
+
+        prior = GaussianState(
+            state_vector=x0,
+            covar=ukf.P,
+            timestamp=start_time,
+        )
+
+        hypothesiser = DistanceHypothesiser(
+            predictor, updater, measure=Mahalanobis(), missed_distance=5
+        )
+
+        data_associator = GlobalNearestNeighbour(hypothesiser)
+
+        deleter = UpdateTimeStepsDeleter(time_steps_since_update=3)
+
+        initiator = MultiMeasurementInitiator(
+            prior_state=prior,  # dummy
+            deleter=deleter,
+            data_associator=data_associator,
+            updater=updater,
+            min_points=4,
+        )
+
+        tracks, all_tracks = set(), set()
+        timesteps = []
+
+        # Iterate over measurements to implement the recursive structure.
+        try:
+            for n, measurements in enumerate(detections):
+
+                timestamp = start_time + timedelta(seconds=dt * n)
+                timesteps.append(timestamp)
+                hypotheses = data_associator.associate(tracks, measurements, timestamp)
+                associated_measurements = set()
+
+                for track in tracks:
+                    hypothesis = hypotheses[track]
+
+                    if hypothesis.measurement:
+                        post = updater.update(hypothesis)
+                        track.append(post)
+
+                        associated_measurements.add(hypothesis.measurement)
+
+                    else:
+                        track.append(hypothesis.prediction)
+
+                tracks -= deleter.delete_tracks(tracks)
+                tracks |= initiator.initiate(
+                    measurements - associated_measurements,
+                    start_time + timedelta(seconds=dt * n),
+                )
+                all_tracks |= tracks
+
+            total_ospa += mean_ospa_stonesoup(
+                track=all_tracks, ground_truth=groundTruths
+            )
+        except np.linalg.LinAlgError:
+            # Penalize failed filter runs heavily so the optimizer avoids this region
+            failed = True
+            break
+    if failed:
+        print("UKF failed on at least 1 random acceleration track")
+    else:
+        print(
+            f"Average OSPA for UKF = {total_ospa / N} over {N} random acceleration tracks"
         )
 
 

@@ -31,7 +31,18 @@ def TuneUKF_stonesoup(
     drones_params,
     N,
 ):
-    Q_base = np.eye(6)
+    Q1D_generator = lambda dt: np.array(
+        [
+            [(dt**5 / 20), (dt**4 / 8), (dt**3 / 6)],
+            [(dt**4 / 8), (dt**3 / 3), (dt**2 / 2)],
+            [(dt**3 / 6), (dt**2 / 2), dt],
+        ]
+    )
+    Q_generator = lambda dt: np.block(
+        [[Q1D_generator(dt), np.zeros((3, 3))], [np.zeros((3, 3)), Q1D_generator(dt)]]
+    )
+
+    Q_base = Q_generator(dt)
 
     P0_base = np.eye(6)
 
@@ -160,20 +171,22 @@ def optimize_UKF_stonesoup(
     drones_params,
     N,
 ):
-    Q_base = 1.0 * np.array(
+    Q1D_generator = lambda dt: np.array(
         [
-            [(dt**5) / 20, 0, (dt**4) / 8, 0, (dt**3) / 6, 0],
-            [0, (dt**5) / 20, 0, (dt**4) / 8, 0, (dt**3) / 6],
-            [(dt**4) / 8, 0, (dt**3) / 3, 0, (dt**2) / 2, 0],
-            [0, (dt**4) / 8, 0, (dt**3) / 3, 0, (dt**2) / 2],
-            [(dt**3) / 6, 0, (dt**2) / 2, 0, dt, 0],
-            [0, (dt**3) / 6, 0, (dt**2) / 2, 0, dt],
+            [(dt**5 / 20), (dt**4 / 8), (dt**3 / 6)],
+            [(dt**4 / 8), (dt**3 / 3), (dt**2 / 2)],
+            [(dt**3 / 6), (dt**2 / 2), dt],
         ]
     )
+    Q_generator = lambda dt: np.block(
+        [[Q1D_generator(dt), np.zeros((3, 3))], [np.zeros((3, 3)), Q1D_generator(dt)]]
+    )
 
-    R_base = 1 * np.array([[var_r, 0], [0, var_phi]])
+    Q_base = Q_generator(dt)
 
-    P0_base = 1 * np.eye(6)
+    R_base = np.array([[var_phi, 0], [0, var_r]])
+
+    P0_base = np.eye(6)
 
     evaluation_data = []
     for _ in range(N):
@@ -277,7 +290,7 @@ def optimize_UKF_stonesoup(
     # Create and run the study
     study = optuna.create_study(direction="minimize")
     study.optimize(
-        objective, n_trials=100, n_jobs=-1
+        objective, n_trials=150, n_jobs=-1
     )  # 100 intelligent guesses instead of 512 blind ones
 
     print(f"Minimum OSPA for UKF = {study.best_value}, with {study.best_params}")
