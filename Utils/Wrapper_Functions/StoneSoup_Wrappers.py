@@ -128,9 +128,7 @@ def SimulatorPolar_stonesoup(**kwargs):
 
         # Create Detection
         det = Detection(
-            state_vector=StateVector(
-                [measurements[1, i], measurements[0, i]]
-            ),  # reverse order as stonesoup expects [phi, r] instead of r,phi
+            state_vector=StateVector([measurements[0, i], measurements[1, i]]),
             timestamp=timestamp,
             measurement_model=measurement_model,
         )
@@ -191,7 +189,7 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
             if 0 <= local_i < meas.shape[1]:
 
                 det = Detection(
-                    state_vector=StateVector([meas[1, local_i], meas[0, local_i]]),
+                    state_vector=StateVector([meas[0, local_i], meas[1, local_i]]),
                     timestamp=timestamp,
                     measurement_model=measurement_model,
                 )

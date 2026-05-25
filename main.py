@@ -65,18 +65,10 @@ h_cartesian = lambda x: np.array([x[0], x[1]])
 h_cartesian_matrix = np.array([[1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0]])
 H_cartesian = lambda x: h_cartesian_matrix
 h_polar = lambda x: np.array(
-    [[np.sqrt(x[0] ** 2 + x[1] ** 2)], [np.arctan2(x[1], x[0])]]
+    [[np.arctan2(x[1], x[0])], [np.sqrt(x[0] ** 2 + x[1] ** 2)]]
 )  # conversion to polar
 H_polar = lambda x: np.array(
     [
-        [
-            x[0] / np.sqrt(x[0] ** 2 + x[1] ** 2),
-            x[1] / np.sqrt(x[0] ** 2 + x[1] ** 2),
-            0,
-            0,
-            0,
-            0,
-        ],
         [
             (-1 * x[1]) / (x[0] ** 2 + x[1] ** 2),
             x[0] / (x[0] ** 2 + x[1] ** 2),
@@ -85,6 +77,14 @@ H_polar = lambda x: np.array(
             0,
             0,
         ],  # derivative of arctan2
+        [
+            x[0] / np.sqrt(x[0] ** 2 + x[1] ** 2),
+            x[1] / np.sqrt(x[0] ** 2 + x[1] ** 2),
+            0,
+            0,
+            0,
+            0,
+        ],
     ]
 )
 
@@ -133,7 +133,7 @@ range_sigma = 1
 azimuth_sigma = np.deg2rad(3)
 var_r = range_sigma**2
 var_phi = azimuth_sigma**2
-R = 1.0 * np.array([[var_r, 0], [0, var_phi]])
+R = 1.0 * np.array([[var_phi, 0], [0, var_r]])
 
 measurements, trueTrack = simulateRandomAccelTrackPolar(
     v_x=1,
@@ -198,30 +198,30 @@ RunJointKalman(
 # optimize_EKF(f, h_polar, F, H_polar, x0, var_r, var_phi, dt, 1000)
 # optimize_UKF(f, h_polar, x0, 2, 0, var_r, var_phi, dt, 1000)
 
-# BenchmarkJoint(
-#     f_matrix,
-#     f,
-#     F,
-#     h_cartesian_matrix,
-#     h_polar,
-#     H_polar,
-#     Q_UCMKF,
-#     Q_EKF,
-#     Q_UKF,
-#     R_EKF,
-#     R_UKF,
-#     x0,
-#     P0_UCMKF,
-#     P0_EKF,
-#     P0_UKF,
-#     range_sigma,
-#     azimuth_sigma,
-#     dt,
-#     alpha,
-#     2,
-#     0,
-#     1000,
-# )
+BenchmarkJoint(
+    f_matrix,
+    f,
+    F,
+    h_cartesian_matrix,
+    h_polar,
+    H_polar,
+    Q_UCMKF,
+    Q_EKF,
+    Q_UKF,
+    R_EKF,
+    R_UKF,
+    x0,
+    P0_UCMKF,
+    P0_EKF,
+    P0_UKF,
+    range_sigma,
+    azimuth_sigma,
+    dt,
+    alpha,
+    2,
+    0,
+    1000,
+)
 
 # # Another with high sigma
 # range_sigma = 10

@@ -119,10 +119,10 @@ var_phi = azimuth_sigma**2
 R = np.array([[var_phi, 0], [0, var_r]])
 
 # tuning
-Q_UKF = 0.005917359871277248 * Q
-R_UKF = 0.01368247610843965 * R
-P0_UKF = 0.019883725415176096 * P0
-alpha = 0.5615697188642643
+Q_UKF = 1 * Q
+R_UKF = 1 * R
+P0_UKF = 1 * P0
+alpha = 0.1
 
 # Define measurement_model
 measurement_model = CartesianToBearingRange(ndim_state=6, mapping=(0, 3), noise_covar=R)
@@ -172,7 +172,7 @@ detections, ground_truths = SimulatorPolarMultitarget_stonesoup(
 
 
 ukf = UnscentedKalmanFilter(
-    f=f, h=h_polar, Q=Q, R=R, x0=x0, P0=P0, alpha=0.3, beta=2, kappa=0
+    f=f, h=h_polar, Q=Q_UKF, R=R_UKF, x0=x0, P0=P0_UKF, alpha=alpha, beta=2, kappa=0
 )
 
 predictor = UKFPredictor(ukf=ukf)

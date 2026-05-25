@@ -67,11 +67,11 @@ def RunConvertedKalman(F, H, Q, sigma_r, sigma_phi, x0, P0, measurements, trueTr
     average_ospa = get_average_ospa(x_history, trueTrack)
 
     plot_measurements = np.zeros_like(measurements)
-    plot_measurements[0, :] = measurements[0, :] * np.cos(
-        measurements[1, :]
+    plot_measurements[0, :] = measurements[1, :] * np.cos(
+        measurements[0, :]
     )  # x = r * cos(theta)
-    plot_measurements[1, :] = measurements[0, :] * np.sin(
-        measurements[1, :]
+    plot_measurements[1, :] = measurements[1, :] * np.sin(
+        measurements[0, :]
     )  # y = r * sin(theta)
 
     # Uses the plotting module to plot the x_history.
@@ -106,11 +106,11 @@ def RunExtendedKalman(f, h, F, H, Q, R, x0, P0, measurements, trueTrack, polar=T
     average_ospa = get_average_ospa(x_history, trueTrack)
 
     plot_measurements = np.zeros_like(measurements)
-    plot_measurements[0, :] = measurements[0, :] * np.cos(
-        measurements[1, :]
+    plot_measurements[0, :] = measurements[1, :] * np.cos(
+        measurements[0, :]
     )  # x = r * cos(theta)
-    plot_measurements[1, :] = measurements[0, :] * np.sin(
-        measurements[1, :]
+    plot_measurements[1, :] = measurements[1, :] * np.sin(
+        measurements[0, :]
     )  # y = r * sin(theta)
 
     # Uses the plotting module to plot the x_history.
@@ -148,11 +148,11 @@ def RunUnscentedKalman(
     average_ospa = get_average_ospa(x_history, trueTrack)
 
     plot_measurements = np.zeros_like(measurements)
-    plot_measurements[0, :] = measurements[0, :] * np.cos(
-        measurements[1, :]
+    plot_measurements[0, :] = measurements[1, :] * np.cos(
+        measurements[0, :]
     )  # x = r * cos(theta)
-    plot_measurements[1, :] = measurements[0, :] * np.sin(
-        measurements[1, :]
+    plot_measurements[1, :] = measurements[1, :] * np.sin(
+        measurements[0, :]
     )  # y = r * sin(theta)
 
     # Uses the plotting module to plot the x_history.
@@ -229,11 +229,11 @@ def RunJointKalman(
     average_ospa_ukf = get_average_ospa(x_history_ukf, trueTrack)
 
     plot_measurements = np.zeros_like(measurements)
-    plot_measurements[0, :] = measurements[0, :] * np.cos(
-        measurements[1, :]
+    plot_measurements[0, :] = measurements[1, :] * np.cos(
+        measurements[0, :]
     )  # x = r * cos(theta)
-    plot_measurements[1, :] = measurements[0, :] * np.sin(
-        measurements[1, :]
+    plot_measurements[1, :] = measurements[1, :] * np.sin(
+        measurements[0, :]
     )  # y = r * sin(theta)
 
     # Uses the plotting module to plot the x_history.

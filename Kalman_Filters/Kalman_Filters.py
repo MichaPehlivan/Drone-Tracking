@@ -96,23 +96,23 @@ class UCMKalmanFilter:
         z = z.flatten()
 
         # compute R
-        rxx = (self.labda_phi ** (-2) - 2) * z[0] ** 2 * np.cos(z[1]) ** 2 + 0.5 * (
-            z[0] ** 2 + self.sigma_r**2
-        ) * (1 + self.labda_phi**4 * np.cos(2 * z[1]))
-        ryy = (self.labda_phi ** (-2) - 2) * z[0] ** 2 * np.sin(z[1]) ** 2 + 0.5 * (
-            z[0] ** 2 + self.sigma_r**2
-        ) * (1 - self.labda_phi**4 * np.cos(2 * z[1]))
-        rxy = (self.labda_phi ** (-2) - 2) * z[0] ** 2 * np.cos(z[1]) * np.sin(
-            z[1]
-        ) + 0.5 * (z[0] ** 2 + self.sigma_r**2) * self.labda_phi**4 * np.sin(
-            2 * z[1]
+        rxx = (self.labda_phi ** (-2) - 2) * z[1] ** 2 * np.cos(z[0]) ** 2 + 0.5 * (
+            z[1] ** 2 + self.sigma_r**2
+        ) * (1 + self.labda_phi**4 * np.cos(2 * z[0]))
+        ryy = (self.labda_phi ** (-2) - 2) * z[1] ** 2 * np.sin(z[0]) ** 2 + 0.5 * (
+            z[1] ** 2 + self.sigma_r**2
+        ) * (1 - self.labda_phi**4 * np.cos(2 * z[0]))
+        rxy = (self.labda_phi ** (-2) - 2) * z[1] ** 2 * np.cos(z[0]) * np.sin(
+            z[0]
+        ) + 0.5 * (z[1] ** 2 + self.sigma_r**2) * self.labda_phi**4 * np.sin(
+            2 * z[0]
         )
         self.R = np.array([[rxx, rxy], [rxy, ryy]])
 
         # convert z
         z_converted = np.zeros((2, 1))
-        z_converted[0, 0] = self.labda_phi**-1 * z[0] * np.cos(z[1])
-        z_converted[1, 0] = self.labda_phi**-1 * z[0] * np.sin(z[1])
+        z_converted[0, 0] = self.labda_phi**-1 * z[1] * np.cos(z[0])
+        z_converted[1, 0] = self.labda_phi**-1 * z[1] * np.sin(z[0])
 
         S = np.dot(self.H, np.dot(self.P, self.H.T)) + self.R
         K = np.dot(np.dot(self.P, self.H.T), np.linalg.inv(S))
@@ -188,12 +188,9 @@ class UnscentedKalmanFilter:
         x0: Initial state estimate
             state vector:
                 |    x         |
-                |    vx         |
-                |    ax         |
                 |    y         |
-                |    vy         |
-                |    ay         |
-
+                |  x_dot (vx)  |
+                |_ y_dot (vy) _|
         Q: Process noise covariance (uncertainty in the process)  TODO: figure out appropriate values 2
         P0: Initial Error covariance (needs to be a large value)
         alpha: scaling parameter
@@ -226,12 +223,11 @@ class UnscentedKalmanFilter:
     # calculate mean while normalizing angle
     def calculate_polar_mean(self, y):
         y_mean = np.zeros(2)
+        y_mean[1] = np.dot(self.wm, y[:, 1])
 
         sum_sin = np.sum(self.wm * np.sin(y[:, 0]))
         sum_cos = np.sum(self.wm * np.cos(y[:, 0]))
         y_mean[0] = np.arctan2(sum_sin, sum_cos)
-
-        y_mean[1] = np.dot(self.wm, y[:, 1])
 
         return y_mean
 

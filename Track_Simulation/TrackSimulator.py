@@ -53,11 +53,11 @@ def simulateLinearTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigm
         trueTrack[1, i] = y + v_y * t
 
         measurements[0, i] = (
-            np.sqrt(trueTrack[0, i] ** 2 + trueTrack[1, i] ** 2) + sigma_r * randn()
-        )  # range
-        measurements[1, i] = (
             np.arctan2(trueTrack[1, i], trueTrack[0, i]) + sigma_phi * randn()
         )  # azimuth
+        measurements[1, i] = (
+            np.sqrt(trueTrack[0, i] ** 2 + trueTrack[1, i] ** 2) + sigma_r * randn()
+        )  # range
 
         t += dt
 
@@ -111,7 +111,7 @@ def simulateRandomAccelTrackPolar(
         r = np.sqrt(curr_x**2 + curr_y**2)
         phi = np.arctan2(curr_y, curr_x)
 
-        measurements[:, i] = [r + sigma_r * randn(), phi + sigma_phi * randn()]
+        measurements[:, i] = [phi + sigma_phi * randn(), r + sigma_r * randn()]
 
     return measurements, trueTrack
 
@@ -187,6 +187,6 @@ def simulateRandomAccelHoverTrackPolar(
         trueTrack[:, i] = [curr_x, curr_y]
         r = np.sqrt(curr_x**2 + curr_y**2)
         phi = np.arctan2(curr_y, curr_x)
-        measurements[:, i] = [r + sigma_r * randn(), phi + sigma_phi * randn()]
+        measurements[:, i] = [phi + sigma_phi * randn(), r + sigma_r * randn()]
 
     return measurements, trueTrack
