@@ -65,12 +65,21 @@ def simulateLinearTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigm
 
 
 def simulateRandomAccelTrackPolar(
-    v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigma_phi
+    v_x,
+    v_y,
+    x0,
+    y0,
+    num_datapoints,
+    dt,
+    sigma_r,
+    sigma_phi,
+    sigma_vr=0,
+    measure_velocity=False,
 ):
     curr_x, curr_y = x0, y0
     curr_vx, curr_vy = v_x, v_y
     trueTrack = np.zeros((2, num_datapoints))
-    measurements = np.zeros((2, num_datapoints))
+    measurements = np.zeros((3 if measure_velocity else 2, num_datapoints))
     v_max = 16.7
     g = 9.81
 
@@ -111,20 +120,37 @@ def simulateRandomAccelTrackPolar(
         r = np.sqrt(curr_x**2 + curr_y**2)
         phi = np.arctan2(curr_y, curr_x)
 
-        measurements[:, i] = [phi + sigma_phi * randn(), r + sigma_r * randn()]
+        if measure_velocity:
+            v_r = (curr_x * curr_vx + curr_y * curr_vy) / r
+            measurements[:, i] = [
+                phi + sigma_phi * randn(),
+                r + sigma_r * randn(),
+                v_r + sigma_vr * randn(),
+            ]
+        else:
+            measurements[:, i] = [phi + sigma_phi * randn(), r + sigma_r * randn()]
 
     return measurements, trueTrack
 
 
 def simulateRandomAccelHoverTrackPolar(
-    v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigma_phi
+    v_x,
+    v_y,
+    x0,
+    y0,
+    num_datapoints,
+    dt,
+    sigma_r,
+    sigma_phi,
+    sigma_vr=0,
+    measure_velocity=False,
 ):
 
     curr_x, curr_y = x0, y0
     curr_vx, curr_vy = v_x, v_y
 
     trueTrack = np.zeros((2, num_datapoints))
-    measurements = np.zeros((2, num_datapoints))
+    measurements = np.zeros((3 if measure_velocity else 2, num_datapoints))
 
     v_max = 16.7  # m/s
     state = "MOVING"
@@ -187,6 +213,15 @@ def simulateRandomAccelHoverTrackPolar(
         trueTrack[:, i] = [curr_x, curr_y]
         r = np.sqrt(curr_x**2 + curr_y**2)
         phi = np.arctan2(curr_y, curr_x)
-        measurements[:, i] = [phi + sigma_phi * randn(), r + sigma_r * randn()]
+
+        if measure_velocity:
+            v_r = (curr_x * curr_vx + curr_y * curr_vy) / r
+            measurements[:, i] = [
+                phi + sigma_phi * randn(),
+                r + sigma_r * randn(),
+                v_r + sigma_vr * randn(),
+            ]
+        else:
+            measurements[:, i] = [phi + sigma_phi * randn(), r + sigma_r * randn()]
 
     return measurements, trueTrack
