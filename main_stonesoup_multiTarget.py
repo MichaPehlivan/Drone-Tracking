@@ -141,8 +141,18 @@ shared_config = {
 }
 
 drones_params = [
-    {"x0": x_initial, "y0": y_initial, "v_x": 5.0, "v_y": 5.0},
-    {"x0": x_initial + 100, "y0": y_initial, "v_x": -5, "v_y": 5},
+    {
+        "x0": x_initial,
+        "y0": y_initial,
+        "v_x": 5.0,
+        "v_y": 5.0
+    },
+    {
+        "x0": x_initial + 100,
+        "y0": y_initial,
+        "v_x": -5,
+        "v_y": 5
+    },
     {
         "x0": x_initial + 100,
         "y0": y_initial + 70,
@@ -157,13 +167,13 @@ drones_params = [
         "v_y": 4,
         "delay_steps": 50,
     },
-    {
-        "x0": x_initial + 30,
-        "y0": y_initial + 90,
-        "v_x": 0,
-        "v_y": -4,
-        "delay_steps": 30,
-    },
+    # {
+    #     "x0": x_initial + 30,
+    #     "y0": y_initial + 90,
+    #     "v_x": 0,
+    #     "v_y": -4,
+    #     "delay_steps": 30,
+    # },
 ]
 
 detections, ground_truths = SimulatorPolarMultitarget_stonesoup(
@@ -294,8 +304,8 @@ plt.show()
 from stonesoup.plotter import AnimatedPlotterly
 
 plotter = AnimatedPlotterly(timesteps, tail_length=1)
-
+plotter.fig.update_layout(width=800, height=800)
 plotter.plot_tracks(all_tracks, [0, 3], uncertainty=True)
 plotter.plot_ground_truths(ground_truths, [0, 3])
-# plotter.plot_measurements(detections, [0, 3])
+plotter.plot_measurements(detections, [0, 3])
 plotter.fig.show()

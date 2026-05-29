@@ -44,23 +44,21 @@ dt = 0.0112*50
 # Initialize the functions and matrices for the Kalman filter.
 F_generator = lambda dt: np.array(
     [
-        [1, dt, 0.5 * dt**2, 0, 0, 0],  # x
-        [0, 1, dt, 0, 0, 0],  # vx
-        [0, 0, 1, 0, 0, 0],  # ax
-        [0, 0, 0, 1, dt, 0.5 * dt**2],  # y
-        [0, 0, 0, 0, 1, dt],  # vy
-        [0, 0, 0, 0, 0, 1],  # ay
+        [1, dt, 0, 0],  # x
+        [0, 1,  0, 0],  # vx
+        [0, 0, 1, dt],  # y
+        [0, 0, 0, 1],  # vy
     ]
 )
 F = F_generator(dt)
 
 f = lambda x: np.dot(F, x)
 
-h_cartesian = lambda x: np.array([x[0], x[3]])
+h_cartesian = lambda x: np.array([x[0], x[2]])
 
-H_cartesian = lambda x: np.array([[1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0]])
+H_cartesian = lambda x: np.array([[1, 0, 0, 0], [0, 0, 1, 0]])
 
-h_polar = lambda x: np.array([np.arctan2(x[3], x[0]), np.sqrt(x[0] ** 2 + x[3] ** 2)])
+h_polar = lambda x: np.array([np.arctan2(x[2], x[0]), np.sqrt(x[0] ** 2 + x[2] ** 2)])
 
 H_polar = lambda x: np.array(
     [
@@ -86,25 +84,24 @@ H_polar = lambda x: np.array(
 # Process noise matrix.
 # IMPORTANT: the process noise is dependent on dt
 # Q = 0.01 * np.eye(6)
-var_a = 0.5
+var_a = 2
 Q1D_generator = lambda dt: var_a * np.array(
     [
-        [(dt**5 / 20), (dt**4 / 8), (dt**3 / 6)],
-        [(dt**4 / 8), (dt**3 / 3), (dt**2 / 2)],
-        [(dt**3 / 6), (dt**2 / 2), dt],
+        [(dt**3 / 3), (dt**2 / 2)],
+        [(dt**2 / 2), dt],
     ]
 )
 Q_generator = lambda dt: np.block(
-    [[Q1D_generator(dt), np.zeros((3, 3))], [np.zeros((3, 3)), Q1D_generator(dt)]]
+    [[Q1D_generator(dt), np.zeros((2, 2))], [np.zeros((2, 2)), Q1D_generator(dt)]]
 )
 
 Q = Q_generator(dt)
 
-# Constant acceleration (CA)
-x0 = np.array([[1], [0], [0], [1], [0], [0]])
+# CV
+x0 = np.array([[1], [0], [1], [0]])
 
 # Starting error covariance (should be on the higher side to quickly settle in towards the correct values. i.e high uncertainty to start with :))
-P0 = 1* np.eye(6)
+P0 = 0.1 * np.eye(4)
 
 # Define variances in measurement dimensions.
 range_sigma = 0.5
@@ -118,7 +115,7 @@ var_phi = azimuth_sigma**2
 R = 1 * np.array([[var_phi, 0], [0, var_r]])
 
 # Define measurement_model
-measurement_model = CartesianToBearingRange(ndim_state=6, mapping=(0, 3), noise_covar=R)
+measurement_model = CartesianToBearingRange(ndim_state=4, mapping=(0, 2), noise_covar=R)
 
 # start the clock for easy timestamp management
 start_time = datetime.now()
@@ -202,10 +199,10 @@ for n, measurements in enumerate(detections):
 # Plotting
 plotter = Plotter()
 # plotter.plot_ground_truths(ground_truths, [0, 3])   # indices of x,y in state vector
-plotter.plot_tracks(all_tracks, [0, 3])
+plotter.plot_tracks(all_tracks, [0, 2])
 plotter.plot_measurements(
     [det for det_set in detections for det in det_set],
-    [0, 3],
+    [0, 2],
     measurement_model=measurement_model,
 )
 
@@ -227,11 +224,10 @@ print(len(timesteps))
 from stonesoup.plotter import AnimatedPlotterly
 print("test")
 plotter = AnimatedPlotterly(timesteps, tail_length=1)
-plotter.fig.update_layout(width=700, height=700)
 print("test")
-
-plotter.plot_tracks(all_tracks, [0, 3], uncertainty=True)
+plotter.fig.update_layout(width=700, height=700)
+plotter.plot_tracks(all_tracks, [0, 2], uncertainty=True)
 # plotter.plot_ground_truths(ground_truths, [0, 3])
-plotter.plot_measurements(detections, [0, 3])
+plotter.plot_measurements(detections, [0, 2])
 print("test")
 plotter.fig.show()

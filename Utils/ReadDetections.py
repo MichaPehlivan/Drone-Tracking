@@ -9,41 +9,70 @@ from stonesoup.models.measurement.nonlinear import CartesianToBearingRange
 from sklearn.cluster import DBSCAN
 
 #Function that wraps the Abdullah and Andrej measurements.
+# def ReadDetections(**kwargs):
+#     #get path from the keyword arguments
+#     path = kwargs['filepath']
+#     measurement_model = kwargs['measurement_model']
+#     dt = kwargs['dt']
+#     start_time = kwargs['start_time']
+#
+#     df = pd.read_csv(path)
+#
+#     # grouped = df.groupby('block')
+#
+#     all_detections = []
+#
+#     for block_num, block_data in df.groupby('block'):
+#
+#         timestamp = start_time + timedelta(seconds= block_num * dt)
+#
+#         block_detections = set()
+#
+#         for _, row in block_data.iterrows():
+#             det = Detection(
+#                 state_vector=StateVector([np.deg2rad(row['angle_deg']), row['range_m']]),
+#                 timestamp=timestamp,
+#                 measurement_model=measurement_model
+#             )
+#             block_detections.add(det)
+#
+#         all_detections.append(block_detections)
+#
+#     # print(all_detections)
+#     return all_detections
+
+
 def ReadDetections(**kwargs):
-    #get path from the keyword arguments
+    # get path from the keyword arguments
     path = kwargs['filepath']
     measurement_model = kwargs['measurement_model']
     dt = kwargs['dt']
     start_time = kwargs['start_time']
 
-    #Read file into dataframe.
     df = pd.read_csv(path)
 
+    max_blocknum = max(df.iloc[:,0])
+    # print(max_blocknum)
     grouped = df.groupby('block')
 
     all_detections = []
 
-
-
-    for block_num, block_data in df.groupby('block'):
-
-        timestamp = start_time + timedelta(seconds= block_num * dt)
+    for i in range(1, max_blocknum+1):
+        timestamp = start_time + timedelta(seconds=i * dt)
 
         block_detections = set()
 
-        for _, row in block_data.iterrows():
-            det = Detection(
-                state_vector=StateVector([np.deg2rad(row['angle_deg']), row['range_m']]),
-                timestamp=timestamp,
-                measurement_model=measurement_model
-            )
-            block_detections.add(det)
-
+        if i in grouped.groups:
+            for col, row in grouped.get_group(i).iterrows():
+                det = Detection(
+                    state_vector=StateVector([np.deg2rad(row['angle_deg']), row['range_m']]),
+                    timestamp=timestamp,
+                    measurement_model=measurement_model
+                )
+                block_detections.add(det)
         all_detections.append(block_detections)
 
-    # print(all_detections)
     return all_detections
-
 
 def ReadAndClusterDetections(**kwargs):
     path = kwargs['filepath']
@@ -56,7 +85,7 @@ def ReadAndClusterDetections(**kwargs):
 
     df['true_time'] = start_time + pd.to_timedelta(df['block'] * dt, unit='s')
 
-    time_window = "0.3s"
+    time_window = "0.5s"
     df = df.set_index('true_time').sort_index()
 
     for window_timestamp, block_data in df.groupby(pd.Grouper(freq=time_window)):
@@ -71,8 +100,7 @@ def ReadAndClusterDetections(**kwargs):
         y = ranges_m * np.sin(angles_rad)
         cartesian_points = np.column_stack((x, y))
 
-        # 3. DBSCAN now sees all points inside this time window simultaneously
-        # It will independently choose how to group them based on their distance
+
         db = DBSCAN(eps=15.0, min_samples=1).fit(cartesian_points)
         labels = db.labels_
 
@@ -103,6 +131,34 @@ def ReadAndClusterDetections(**kwargs):
 
     return all_detections
 
+# def ReadAndClusterDetections(**kwargs):
+#     # get path from the keyword arguments
+#     path = kwargs['filepath']
+#     measurement_model = kwargs['measurement_model']
+#     dt = kwargs['dt']
+#     start_time = kwargs['start_time']
+#
+#     df = pd.read_csv(path)
+#
+#     all_detections = []
+#
+#     for block_num, block_data in df.groupby('block'):
+#
+#         timestamp = start_time + timedelta(seconds=block_num * dt)
+#
+#         block_detections = set()
+#
+#         for _, row in block_data.iterrows():
+#             det = Detection(
+#                 state_vector=StateVector([np.deg2rad(row['angle_deg']), row['range_m']]),
+#                 timestamp=timestamp,
+#                 measurement_model=measurement_model
+#             )
+#             block_detections.add(det)
+#
+#         all_detections.append(block_detections)
+#
+#     return all_detections
 
 if __name__ == '__main__':
 
@@ -120,9 +176,9 @@ if __name__ == '__main__':
         noise_covar=R
     )
 
-    detections = ReadAndClusterDetections(filepath="../Data/NEO1_range_angle_velocity_detections_ndoppler50.csv",
+    detections = ReadDetections(filepath="../Data/flight5_rd_guided_music_range_angle_velocity_detections_ndoppler50.csv",
                                 measurement_model=measurement_model,
-                                dt = 0.0112,
+                                dt = 0.0112*5,
                                 start_time=datetime.now()
     )
     print(len(list(detections)))
