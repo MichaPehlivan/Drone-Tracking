@@ -37,7 +37,7 @@ from stonesoup.hypothesiser.distance import DistanceHypothesiser
 from stonesoup.plotter import Plotter
 
 # Initialize values
-dt = 0.0112*50
+dt = 0.0112*25
 # dt = 0.1
 
 
@@ -84,7 +84,7 @@ H_polar = lambda x: np.array(
 # Process noise matrix.
 # IMPORTANT: the process noise is dependent on dt
 # Q = 0.01 * np.eye(6)
-var_a = 2
+var_a = 0.5
 Q1D_generator = lambda dt: var_a * np.array(
     [
         [(dt**3 / 3), (dt**2 / 2)],
@@ -101,10 +101,10 @@ Q = Q_generator(dt)
 x0 = np.array([[1], [0], [1], [0]])
 
 # Starting error covariance (should be on the higher side to quickly settle in towards the correct values. i.e high uncertainty to start with :))
-P0 = 0.1 * np.eye(4)
+P0 = 1 * np.eye(4)
 
 # Define variances in measurement dimensions.
-range_sigma = 0.5
+range_sigma = 3
 azimuth_sigma = np.deg2rad(3)
 
 # convert to variance.
@@ -122,7 +122,7 @@ start_time = datetime.now()
 
 # Get the detections from Abdullahs group
 detections = ReadDetections(
-    filepath="Data/flight2/flight2-sidetoside-tiny_tinyrad_master_1_rd_guided_mvdr_range_angle_velocity_detections_ndoppler500.csv",
+    filepath="Data/flight2/flight2-sidetoside-tiny_tinyrad_master_1_rd_guided_mvdr_range_angle_velocity_detections_ndoppler250.csv",
     measurement_model=measurement_model,
     dt=dt,
     start_time=start_time,
@@ -149,19 +149,19 @@ prior = GaussianState(
 
 
 hypothesiser = DistanceHypothesiser(
-    predictor, updater, measure=Mahalanobis(), missed_distance=2
+    predictor, updater, measure=Mahalanobis(), missed_distance=3
 )
 
 data_associator = GlobalNearestNeighbour(hypothesiser)
 
-deleter = UpdateTimeStepsDeleter(time_steps_since_update=6)
+deleter = UpdateTimeStepsDeleter(time_steps_since_update=10)
 
 initiator = MultiMeasurementInitiator(
     prior_state=prior,
     deleter=deleter,
     data_associator=data_associator,
     updater=updater,
-    min_points=4,
+    min_points=5,
 )
 # ________________________
 
