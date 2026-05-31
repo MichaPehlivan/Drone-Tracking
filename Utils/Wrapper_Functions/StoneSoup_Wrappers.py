@@ -70,10 +70,10 @@ class UKFUpdater(Updater):
 
     def predict_measurement(self, predicted_state, measurement_model=None, **kwargs):
 
-        self.ukf.x = np.array(predicted_state.mean).flatten()
-        self.ukf.P = np.array(predicted_state.covar)
+        x_local = np.array(predicted_state.mean).flatten()
+        P_local = np.array(predicted_state.covar)
 
-        sigma_points = self.ukf.generate_sigma_points(self.ukf.x, self.ukf.P)
+        sigma_points = self.ukf.generate_sigma_points(x_local, P_local)
         y = np.array([self.ukf.h(s).flatten() for s in sigma_points])
         y_mean = self.ukf.calculate_polar_mean(y)
 
@@ -86,7 +86,6 @@ class UKFUpdater(Updater):
         S += self.ukf.R
 
         # Covariance matrix necessary for the Mahalanobis distance measure, wanted to try it
-        # TODO: justify why this is the right covariance matrix, just same as error matrix x-xhat except scaled with weights.
         return GaussianMeasurementPrediction(
             state_vector=StateVector(y_mean.reshape(-1, 1)),
             covar=CovarianceMatrix(S),
@@ -94,17 +93,76 @@ class UKFUpdater(Updater):
         )
 
 
-""" 
-class CustomDistanceMeasure:
-    def __call__(self, state1, state2):
 
-        vec1 = getattr(state1, 'state_vector', state1)
-        vec2 = getattr(state2, 'state_vector', state2)
 
-        v1 = np.asarray(vec1).flatten()
-        v2 = np.asarray(vec2).flatten()
-        return np.linalg.norm(v1 - v2)
-"""
+
+class EKFPredictor(Predictor):
+    # inherits the properties of the Predictor class (which I want to emulate)
+    ekf: object = Property()
+    # Automatically creates an __init__ with magic syntax and stonesoup magic :0
+
+    transition_model: TransitionModel = Property(default=None)
+    # deze ook verplicht for some reason, gebruiken hem verder niet
+
+    def predict(self, prior, timestamp=None, **kwargs):
+
+        self.ekf.x = np.array(prior.mean).flatten()
+        self.ekf.P = np.array(prior.covar)
+
+        x_pred = self.ekf.predict()
+
+        return GaussianStatePrediction(
+            state_vector=StateVector(x_pred.reshape(-1, 1)),
+            covar=CovarianceMatrix(self.ekf.P),
+            timestamp=timestamp,
+        )
+
+
+#Same thing but for EKF
+
+class EKFUpdater(Updater):
+
+    ekf: object = Property()
+
+    measurement_model: object = Property(default=None)
+
+    def update(self, hypothesis, **kwargs):
+
+        prediction = hypothesis.prediction
+        measurement = hypothesis.measurement
+
+        self.ekf.x = np.array(prediction.mean).flatten()
+        self.ekf.P = np.array(prediction.covar)
+
+        z = np.array(measurement.state_vector).flatten()
+
+        x_updated = self.ekf.update(z)
+
+        return GaussianStateUpdate(
+            state_vector=StateVector(x_updated.reshape(-1, 1)),
+            covar=CovarianceMatrix(self.ekf.P),
+            hypothesis=hypothesis,
+            timestamp=measurement.timestamp,
+        )
+
+    def predict_measurement(self, predicted_state, measurement_model=None, **kwargs):
+
+
+        x_local = np.array(predicted_state.mean).flatten()
+        P_local = np.array(predicted_state.covar)
+
+        z_predicted = self.ekf.h(x_local).flatten()
+
+        H_matrix = self.ekf.H(x_local)
+
+        S = np.dot(H_matrix, np.dot(P_local, H_matrix.T)) + self.ekf.R
+
+        # Covariance matrix necessary for the Mahalanobis distance measure, wanted to try it
+        return GaussianMeasurementPrediction(
+            state_vector=StateVector(z_predicted.reshape(-1, 1)),
+            covar=CovarianceMatrix(S),
+            timestamp=predicted_state.timestamp,
+        )
 
 
 def SimulatorPolar_stonesoup(**kwargs):

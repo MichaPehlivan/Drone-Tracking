@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 # Internal Packages
 
 from Evaluation_Metrics import ospa_stonesoup
-from Kalman_Filters import UnscentedKalmanFilter
+from Kalman_Filters import UnscentedKalmanFilter, ExtendedKalmanFilter
 from Track_Simulation import (
     simulateLinearTrack,
     simulateLinearTrackPolar,
@@ -16,8 +16,8 @@ from Track_Simulation import (
 from Utils.Wrapper_Functions import (
     SimulatorPolar_stonesoup,
     SimulatorPolarMultitarget_stonesoup,
-    UKFUpdater,
-    UKFPredictor,
+    EKFUpdater,
+    EKFPredictor,
     # CustomDistanceMeasure
 )
 from Utils import ReadDetections, ReadAndClusterDetections
@@ -37,7 +37,7 @@ from stonesoup.hypothesiser.distance import DistanceHypothesiser
 from stonesoup.plotter import Plotter
 
 # Initialize values
-dt = 0.0112*25
+dt = 0.0112*50
 # dt = 0.1
 
 
@@ -52,9 +52,9 @@ F_generator = lambda dt: np.array(
         [0, 0, 0, 0, 0, 1],  # ay
     ]
 )
-F = F_generator(dt)
+F = lambda x: F_generator(dt)
 
-f = lambda x: np.dot(F, x)
+f = lambda x: np.dot(F_generator(dt), x)
 
 h_cartesian = lambda x: np.array([x[0], x[3]])
 
@@ -62,26 +62,24 @@ H_cartesian = lambda x: np.array([[1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0]])
 
 h_polar = lambda x: np.array([np.arctan2(x[3], x[0]), np.sqrt(x[0] ** 2 + x[3] ** 2)])
 
-H_polar = lambda x: np.array(
+H_polar = lambda x: np.array([
     [
-        [
-            x[0] / np.sqrt(x[0] ** 2 + x[3] ** 2),
-            0,
-            0,
-            x[3] / np.sqrt(x[0] ** 2 + x[3] ** 2),
-            0,
-            0,
-        ],
-        [
-            (-1 * x[3]) / (x[0] ** 2 + x[3] ** 2),
-            0,
-            0,
-            x[0] / (x[0] ** 2 + x[3] ** 2),
-            0,
-            0,
-        ],  # derivative of arctan2
-    ]
-)
+        (-x[3]) / (x[0]**2 + x[3]**2),
+        0,
+        0,
+        x[0]  / (x[0]**2 + x[3]**2),
+        0,
+        0
+    ],
+    [
+        x[0] / np.sqrt(x[0]**2 + x[3]**2),
+        0,
+        0,
+        x[3] / np.sqrt(x[0]**2 + x[3]**2),
+        0,
+        0
+    ],
+])
 
 # Process noise matrix.
 # IMPORTANT: the process noise is dependent on dt
@@ -104,7 +102,7 @@ Q = Q_generator(dt)
 x0 = np.array([[1], [0], [0], [1], [0], [0]])
 
 # Starting error covariance (should be on the higher side to quickly settle in towards the correct values. i.e high uncertainty to start with :))
-P0 = 5* np.eye(6)
+P0 = 5 * np.eye(6)
 
 # Define variances in measurement dimensions.
 range_sigma = 3
@@ -125,28 +123,21 @@ start_time = datetime.now()
 
 # Get the detections from Abdullahs group
 detections = ReadDetections(
-    filepath="Data/flight2/flight2-sidetoside-tiny_tinyrad_master_1_rd_guided_mvdr_range_angle_velocity_detections_ndoppler250.csv",
+    filepath="Data/flight2/flight2-sidetoside-tiny_tinyrad_master_1_rd_guided_mvdr_range_angle_velocity_detections_ndoppler500.csv",
     measurement_model=measurement_model,
     dt=dt,
     start_time=start_time,
 )
 
 
-# ___Initialize the filter____
-ukf = UnscentedKalmanFilter(
-    f=f, h=h_polar, Q=Q, R=R, x0=x0, P0=P0, alpha=1, beta=2, kappa=0
-)
+ekf = ExtendedKalmanFilter(f=f, h=h_polar, F=F, H=H_polar, Q=Q, R=R, x0=x0, P0=P0)
 
-# make the stonesoup objects necessary for the stonesoup integration.
-predictor = UKFPredictor(ukf=ukf)
-updater = UKFUpdater(ukf=ukf)
-# ____________________________
+predictor = EKFPredictor(ekf=ekf)
+updater = EKFUpdater(ekf=ekf)
 
-
-# _______Other stuff__
 prior = GaussianState(
     state_vector=x0,
-    covar=ukf.P,
+    covar=ekf.P,
     timestamp=start_time,
 )
 
@@ -157,14 +148,14 @@ hypothesiser = DistanceHypothesiser(
 
 data_associator = GlobalNearestNeighbour(hypothesiser)
 
-deleter = UpdateTimeStepsDeleter(time_steps_since_update=6)
+deleter = CovarianceBasedDeleter(covar_trace_thresh=45.0)
 
 initiator = MultiMeasurementInitiator(
     prior_state=prior,
     deleter=deleter,
     data_associator=data_associator,
     updater=updater,
-    min_points=4,
+    min_points=3,
 )
 # ________________________
 
