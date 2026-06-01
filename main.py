@@ -30,7 +30,7 @@ from stonesoup.plotter import Plotter
 # MAIN FUNCTION CONFIGURATION
 
 # filter and model type
-filter = "ucmkf"  # "ucmkf", "ekf", or "ukf"
+filter = "ukf"  # "ucmkf", "ekf", or "ukf"
 model = "cv"  # "cv" or "ca"
 
 # variances in measurement dimensions.
@@ -52,14 +52,20 @@ UKF_R = 1
 UKF_P0 = 1
 alpha = 1
 
-dt = 0.0112 * 25
+# StoneSoup parameters
+association_distance = 2
+deletion_covariance = 25
+initiation_points = 5
+
+
+dt = 0.0112 * ndoppler / 10
 
 
 # Initialize the functions and matrices for the Kalman filter.
 F_generator = lambda dt: (
     np.array(
         [
-            [1, dt, 0, 0],  # x
+            [1, dt, 0, 0],  # xip
             [0, 1, 0, 0],  # vx
             [0, 0, 1, dt],  # y
             [0, 0, 0, 1],  # vy
@@ -253,21 +259,20 @@ prior = GaussianState(
 
 
 hypothesiser = DistanceHypothesiser(
-    predictor, updater, measure=Mahalanobis(), missed_distance=2
+    predictor, updater, measure=Mahalanobis(), missed_distance=association_distance
 )
 
 data_associator = GlobalNearestNeighbour(hypothesiser)
 
-deleter = CovarianceBasedDeleter(covar_trace_thresh=25.0)
+deleter = CovarianceBasedDeleter(covar_trace_thresh=deletion_covariance)
 
 initiator = MultiMeasurementInitiator(
     prior_state=prior,
     deleter=deleter,
     data_associator=data_associator,
     updater=updater,
-    min_points=5,
+    min_points=initiation_points,
 )
-# ________________________
 
 
 tracks, all_tracks = set(), set()
