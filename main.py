@@ -30,8 +30,8 @@ from stonesoup.plotter import Plotter
 # MAIN FUNCTION CONFIGURATION
 
 # filter and model type
-filter = "ucmkf"
-model = "cv"
+filter = "ucmkf"  # "ucmkf", "ekf", or "ukf"
+model = "cv"  # "cv" or "ca"
 
 # variances in measurement dimensions.
 range_sigma = 3
