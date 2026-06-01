@@ -84,6 +84,7 @@ class UCMKalmanFilter:
         self.Q = Q
         self.P = P0
         self.sigma_r = sigma_r
+        self.sigma_phi = sigma_phi
         self.labda_phi = np.exp(-1 * (sigma_phi**2) / 2)
         self.x = x0
 

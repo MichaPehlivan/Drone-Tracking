@@ -6,32 +6,21 @@ from datetime import datetime, timedelta
 # Internal Packages
 
 from Evaluation_Metrics import ospa_stonesoup
-from Kalman_Filters import UnscentedKalmanFilter, ExtendedKalmanFilter
-from Track_Simulation import (
-    simulateLinearTrack,
-    simulateLinearTrackPolar,
-    simulateRandomAccelTrackPolar,
-    simulateRandomAccelHoverTrackPolar,
-)
+from Kalman_Filters import UCMKalmanFilter, ExtendedKalmanFilter, UnscentedKalmanFilter
 from Utils.Wrapper_Functions import (
-    SimulatorPolar_stonesoup,
-    SimulatorPolarMultitarget_stonesoup,
-    EKFUpdater,
+    UCMKFPredictor,
+    UCMKFUpdater,
     EKFPredictor,
+    EKFUpdater,
     UKFPredictor,
     UKFUpdater,
-    # CustomDistanceMeasure
 )
 from Utils import ReadDetections, ReadAndClusterDetections
 
 # Stonesoup imports
 from stonesoup.models.measurement.nonlinear import CartesianToBearingRange
 from stonesoup.types.state import GaussianState
-from stonesoup.types.hypothesis import SingleHypothesis
-from stonesoup.types.track import Track
 from stonesoup.dataassociator.neighbour import GlobalNearestNeighbour
-from stonesoup.dataassociator.probability import JPDA
-from stonesoup.deleter.time import UpdateTimeStepsDeleter
 from stonesoup.deleter.error import CovarianceBasedDeleter
 from stonesoup.initiator.simple import MultiMeasurementInitiator
 from stonesoup.measures import Mahalanobis
@@ -41,8 +30,8 @@ from stonesoup.plotter import Plotter
 # MAIN FUNCTION CONFIGURATION
 
 # filter and model type
-filter = "ukf"
-model = "ca"
+filter = "ucmkf"
+model = "cv"
 
 # variances in measurement dimensions.
 range_sigma = 3
@@ -53,6 +42,8 @@ flight_num = 2
 ndoppler = 250
 
 # Kalman Filter tuning
+UCMKF_Q = 1
+UCMKF_P0 = 1
 EKF_Q = 1
 EKF_R = 1
 EKF_P0 = 1
@@ -86,14 +77,22 @@ F_generator = lambda dt: (
         ]
     )
 )
-F = lambda x: F_generator(dt)
+F = F_generator(dt) if filter == "ucmkf" else lambda x: F_generator(dt)
 
 f = lambda x: np.dot(F_generator(dt), x)
 
-h = lambda x: (
-    np.array([np.arctan2(x[2], x[0]), np.sqrt(x[0] ** 2 + x[2] ** 2)])
-    if model == "cv"
-    else np.array([np.arctan2(x[3], x[0]), np.sqrt(x[0] ** 2 + x[3] ** 2)])
+h = (
+    np.array([[1, 0, 0, 0], [0, 0, 1, 0]])
+    if filter == "ucmkf" and model == "cv"
+    else (
+        np.array([[1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0]])
+        if filter == "ucmkf"
+        else lambda x: (
+            np.array([np.arctan2(x[2], x[0]), np.sqrt(x[0] ** 2 + x[2] ** 2)])
+            if model == "cv"
+            else np.array([np.arctan2(x[3], x[0]), np.sqrt(x[0] ** 2 + x[3] ** 2)])
+        )
+    )
 )
 
 H = lambda x: (
@@ -206,25 +205,45 @@ detections = ReadDetections(
 
 # ___Initialize the filter____
 kf = (
-    ExtendedKalmanFilter(
-        f=f, h=h, F=F, H=H, Q=EKF_Q * Q, R=EKF_R * R, P0=EKF_P0 * P0, x0=x0
-    )
-    if filter == "ekf"
-    else UnscentedKalmanFilter(
-        f=f,
-        h=h,
-        Q=UKF_Q * Q,
-        R=UKF_R * R,
-        P0=UKF_P0 * P0,
-        alpha=alpha,
-        beta=2,
-        kappa=0,
+    UCMKalmanFilter(
+        F=F,
+        H=h,
+        Q=UCMKF_Q * Q,
+        P0=UCMKF_P0 * P0,
+        sigma_r=range_sigma,
+        sigma_phi=azimuth_sigma,
         x0=x0,
+    )
+    if filter == "ucmkf"
+    else (
+        ExtendedKalmanFilter(
+            f=f, h=h, F=F, H=H, Q=EKF_Q * Q, R=EKF_R * R, P0=EKF_P0 * P0, x0=x0
+        )
+        if filter == "ekf"
+        else UnscentedKalmanFilter(
+            f=f,
+            h=h,
+            Q=UKF_Q * Q,
+            R=UKF_R * R,
+            P0=UKF_P0 * P0,
+            alpha=alpha,
+            beta=2,
+            kappa=0,
+            x0=x0,
+        )
     )
 )
 
-predictor = EKFPredictor(ekf=kf) if filter == "ekf" else UKFPredictor(ukf=kf)
-updater = EKFUpdater(ekf=kf) if filter == "ekf" else UKFUpdater(ukf=kf)
+predictor = (
+    UCMKFPredictor(ucmkf=kf)
+    if filter == "ucmkf"
+    else EKFPredictor(ekf=kf) if filter == "ekf" else UKFPredictor(ukf=kf)
+)
+updater = (
+    UCMKFUpdater(ucmkf=kf)
+    if filter == "ucmkf"
+    else EKFUpdater(ekf=kf) if filter == "ekf" else UKFUpdater(ukf=kf)
+)
 
 prior = GaussianState(
     state_vector=x0,
@@ -256,7 +275,6 @@ timesteps = []
 previous_timestamp = None
 
 for n, measurements in enumerate(detections):
-
     timestamp = start_time + timedelta(seconds=dt * n)
     timesteps.append(timestamp)
 
