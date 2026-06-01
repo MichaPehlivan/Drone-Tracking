@@ -50,7 +50,7 @@ def RunSimpleKalman(F, H, Q, R, x0, P0, measurements, trueTrack):
 def RunConvertedKalman(F, H, Q, sigma_r, sigma_phi, x0, P0, measurements, trueTrack):
 
     # Define the kalman filter.
-    KF = UCMKalmanFilter(F, H, Q, sigma_r, sigma_phi, x0, P0)
+    KF = UCMKalmanFilter(F, H, Q, P0, sigma_r, sigma_phi, x0)
 
     # Initialize the history array.
     x_history = np.zeros((6, len(measurements[0, :])))
@@ -89,7 +89,7 @@ inputs are the same as for the kalman filter + the necessary measurements
 def RunExtendedKalman(f, h, F, H, Q, R, x0, P0, measurements, trueTrack, polar=True):
 
     # Define the kalman filter.
-    KF = ExtendedKalmanFilter(f, h, F, H, Q, R, x0, P0)
+    KF = ExtendedKalmanFilter(f, h, F, H, Q, R, P0, x0)
 
     # Initialize the history array.
     x_history = np.zeros((6, len(measurements[0, :])))
@@ -131,7 +131,7 @@ def RunUnscentedKalman(
 ):
 
     # Define the kalman filter.
-    KF = UnscentedKalmanFilter(f, h, Q, R, x0, P0, alpha, beta, kappa)
+    KF = UnscentedKalmanFilter(f, h, Q, R, P0, alpha, beta, kappa, x0)
 
     # Initialize the history array.
     x_history = np.zeros((6, len(measurements[0, :])))
@@ -191,10 +191,10 @@ def RunJointKalman(
 ):
     # Define the kalman filters.
     UCMKF = UCMKalmanFilter(
-        f_matrix, h_matrix, Q_UCMKF, sigma_r, sigma_phi, x0, P0_UCMKF
+        f_matrix, h_matrix, Q_UCMKF, P0_UCMKF, sigma_r, sigma_phi, x0
     )
-    EKF = ExtendedKalmanFilter(f, h, F, H, Q_EKF, R_EKF, x0, P0_EKF)
-    UKF = UnscentedKalmanFilter(f, h, Q_UKF, R_UKF, x0, P0_UKF, alpha, beta, kappa)
+    EKF = ExtendedKalmanFilter(f, h, F, H, Q_EKF, R_EKF, P0_EKF, x0)
+    UKF = UnscentedKalmanFilter(f, h, Q_UKF, R_UKF, P0_UKF, alpha, beta, kappa, x0)
 
     # Initialize the history arrays.
     x_history_ekf = np.zeros((6, len(measurements[0, :])))

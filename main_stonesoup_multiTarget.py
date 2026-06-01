@@ -141,18 +141,8 @@ shared_config = {
 }
 
 drones_params = [
-    {
-        "x0": x_initial,
-        "y0": y_initial,
-        "v_x": 5.0,
-        "v_y": 5.0
-    },
-    {
-        "x0": x_initial + 100,
-        "y0": y_initial,
-        "v_x": -5,
-        "v_y": 5
-    },
+    {"x0": x_initial, "y0": y_initial, "v_x": 5.0, "v_y": 5.0},
+    {"x0": x_initial + 100, "y0": y_initial, "v_x": -5, "v_y": 5},
     {
         "x0": x_initial + 100,
         "y0": y_initial + 70,
@@ -182,7 +172,7 @@ detections, ground_truths = SimulatorPolarMultitarget_stonesoup(
 
 
 ukf = UnscentedKalmanFilter(
-    f=f, h=h_polar, Q=Q_UKF, R=R_UKF, x0=x0, P0=P0_UKF, alpha=alpha, beta=2, kappa=0
+    f=f, h=h_polar, Q=Q_UKF, R=R_UKF, P0=P0_UKF, alpha=alpha, beta=2, kappa=0, x0=x0
 )
 
 predictor = UKFPredictor(ukf=ukf)

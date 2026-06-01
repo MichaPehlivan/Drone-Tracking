@@ -137,15 +137,7 @@ detections, ground_truth = SimulatorPolar_stonesoup(
 )
 
 ukf = UnscentedKalmanFilter(
-    f=f,
-    h=h_polar,
-    Q=Q,
-    R=R,
-    x0=x0,
-    P0=P0,
-    alpha=0.3,
-    beta=2,
-    kappa=0,
+    f=f, h=h_polar, Q=Q, R=R, P0=P0, alpha=0.3, beta=2, kappa=0, x0=x0
 )
 
 

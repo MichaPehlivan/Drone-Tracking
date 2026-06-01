@@ -79,11 +79,11 @@ def TuneUKF_stonesoup(
                     h=h,
                     Q=Q,
                     R=R,
-                    x0=x0,
                     P0=P0,
                     alpha=alpha,
                     beta=beta,
                     kappa=kappa,
+                    x0=x0,
                 )
 
                 predictor = UKFPredictor(ukf=ukf)
@@ -213,11 +213,11 @@ def optimize_UKF_stonesoup(
                 h=h,
                 Q=Q,
                 R=R,
-                x0=x0,
                 P0=P0,
                 alpha=alpha,
                 beta=beta,
                 kappa=kappa,
+                x0=x0,
             )
 
             predictor = UKFPredictor(ukf=ukf)

@@ -78,14 +78,14 @@ class UCMKalmanFilter:
             z: Measurement (cartesian coordinates)
     """
 
-    def __init__(self, F, H, Q, sigma_r, sigma_phi, x0, P0):
+    def __init__(self, F, H, Q, P0, sigma_r, sigma_phi, x0):
         self.F = F
         self.H = H
         self.Q = Q
+        self.P = P0
         self.sigma_r = sigma_r
         self.labda_phi = np.exp(-1 * (sigma_phi**2) / 2)
         self.x = x0
-        self.P = P0
 
     def predict(self):
         self.x = np.dot(self.F, self.x)
@@ -149,7 +149,7 @@ class ExtendedKalmanFilter:
             z: Measurement (cartesian coordinates)
     """
 
-    def __init__(self, f, h, F, H, Q, R, x0, P0):
+    def __init__(self, f, h, F, H, Q, R, P0, x0):
         self.f = f
         self.h = h
         self.F = F
@@ -204,13 +204,13 @@ class UnscentedKalmanFilter:
             z: Measurement (cartesian coordinates)
     """
 
-    def __init__(self, f, h, Q, R, x0, P0, alpha, beta, kappa):
+    def __init__(self, f, h, Q, R, P0, alpha, beta, kappa, x0):
         self.f = f
         self.h = h
         self.Q = Q
         self.R = R
-        self.x = x0.flatten()
         self.P = P0
+        self.x = x0.flatten()
         self.L = len(x0)
 
         self.alpha = alpha

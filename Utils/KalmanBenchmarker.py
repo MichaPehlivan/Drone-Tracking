@@ -37,7 +37,7 @@ def BenchmarkEKF(f, h, F, H, Q, R, x0, P0, var_r, var_phi, dt, N):
             sigma_phi=np.sqrt(var_phi),
         )
         # Define the kalman filter.
-        KF = ExtendedKalmanFilter(f, h, F, H, Q, R, x0, P0)
+        KF = ExtendedKalmanFilter(f, h, F, H, Q, R, P0, x0)
 
         # Initialize the history array.
         x_history = np.zeros((6, len(measurements[0, :])))
@@ -69,7 +69,7 @@ def BenchmarkEKF(f, h, F, H, Q, R, x0, P0, var_r, var_phi, dt, N):
             sigma_phi=np.sqrt(var_phi),
         )
         # Define the kalman filter.
-        KF = ExtendedKalmanFilter(f, h, F, H, Q, R, x0, P0)
+        KF = ExtendedKalmanFilter(f, h, F, H, Q, R, P0, x0)
 
         # Initialize the history array.
         x_history = np.zeros((6, len(measurements[0, :])))
@@ -106,7 +106,7 @@ def BenchmarkUKF(f, h, Q, R, x0, P0, var_r, var_phi, dt, alpha, beta, kappa, N):
             sigma_phi=np.sqrt(var_phi),
         )
         # Define the kalman filter.
-        KF = UnscentedKalmanFilter(f, h, Q, R, x0, P0, alpha, beta, kappa)
+        KF = UnscentedKalmanFilter(f, h, Q, R, P0, alpha, beta, kappa, x0)
 
         # Initialize the history array.
         x_history = np.zeros((6, len(measurements[0, :])))
@@ -146,7 +146,7 @@ def BenchmarkUKF(f, h, Q, R, x0, P0, var_r, var_phi, dt, alpha, beta, kappa, N):
             sigma_phi=np.sqrt(var_phi),
         )
         # Define the kalman filter.
-        KF = UnscentedKalmanFilter(f, h, Q, R, x0, P0, alpha, beta, kappa)
+        KF = UnscentedKalmanFilter(f, h, Q, R, P0, alpha, beta, kappa, x0)
 
         # Initialize the history array.
         x_history = np.zeros((6, len(measurements[0, :])))
@@ -198,15 +198,7 @@ def BenchmarkUKF_stonesoup(
             **shared_config, drone_configs=drones_params
         )
         ukf = UnscentedKalmanFilter(
-            f=f,
-            h=h,
-            Q=Q,
-            R=R,
-            x0=x0,
-            P0=P0,
-            alpha=alpha,
-            beta=beta,
-            kappa=kappa,
+            f=f, h=h, Q=Q, R=R, P0=P0, alpha=alpha, beta=beta, kappa=kappa, x0=x0
         )
 
         predictor = UKFPredictor(ukf=ukf)
@@ -322,10 +314,10 @@ def BenchmarkJoint(
         )
         # Define the kalman filters.
         UCMKF = UCMKalmanFilter(
-            f_matrix, h_matrix, Q_UCMKF, sigma_r, sigma_phi, x0, P0_UCMKF
+            f_matrix, h_matrix, Q_UCMKF, P0_UCMKF, sigma_r, sigma_phi, x0
         )
-        EKF = ExtendedKalmanFilter(f, h, F, H, Q_EKF, R_EKF, x0, P0_EKF)
-        UKF = UnscentedKalmanFilter(f, h, Q_UKF, R_UKF, x0, P0_UKF, alpha, beta, kappa)
+        EKF = ExtendedKalmanFilter(f, h, F, H, Q_EKF, R_EKF, P0_EKF, x0)
+        UKF = UnscentedKalmanFilter(f, h, Q_UKF, R_UKF, P0_UKF, alpha, beta, kappa, x0)
 
         # Initialize the history arrays.
         x_history_UCMKF = np.zeros((6, len(measurements[0, :])))
@@ -392,10 +384,10 @@ def BenchmarkJoint(
         )
         # Define the kalman filters.
         UCMKF = UCMKalmanFilter(
-            f_matrix, h_matrix, Q_UCMKF, sigma_r, sigma_phi, x0, P0_UCMKF
+            f_matrix, h_matrix, Q_UCMKF, P0_UCMKF, sigma_r, sigma_phi, x0
         )
-        EKF = ExtendedKalmanFilter(f, h, F, H, Q_EKF, R_EKF, x0, P0_EKF)
-        UKF = UnscentedKalmanFilter(f, h, Q_UKF, R_UKF, x0, P0_UKF, alpha, beta, kappa)
+        EKF = ExtendedKalmanFilter(f, h, F, H, Q_EKF, R_EKF, P0_EKF, x0)
+        UKF = UnscentedKalmanFilter(f, h, Q_UKF, R_UKF, P0_UKF, alpha, beta, kappa, x0)
 
         # Initialize the history arrays.
         x_history_UCMKF = np.zeros((6, len(measurements[0, :])))

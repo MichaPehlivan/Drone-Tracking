@@ -53,7 +53,7 @@ def TuneEKF(f, h, F, H, x0, var_r, var_phi, dt, N):
                 avarage_score = 0
                 for measurements, trueTrack in eval_data:
                     # Define the kalman filter.
-                    KF = ExtendedKalmanFilter(f, h, F, H, Q, R, x0, P0)
+                    KF = ExtendedKalmanFilter(f, h, F, H, Q, R, P0, x0)
 
                     # Initialize the history array.
                     x_history = np.zeros((6, len(measurements[0, :])))
@@ -125,7 +125,7 @@ def TuneUKF(f, h, x0, var_r, var_phi, dt, beta, kappa, N):
                     for measurements, trueTrack in eval_data:
                         # Define the kalman filter.
                         KF = UnscentedKalmanFilter(
-                            f, h, Q, R, x0, P0, alpha, beta, kappa
+                            f, h, Q, R, P0, alpha, beta, kappa, x0
                         )
 
                         # Initialize the history array.
@@ -197,7 +197,7 @@ def optimize_UCMKF(f, h, x0, sigma_r, sigma_phi, dt, N):
 
         total_ospa = 0
         for measurements, trueTrack in evaluation_data:
-            KF = UCMKalmanFilter(f, h, Q, sigma_r, sigma_phi, x0, P0)
+            KF = UCMKalmanFilter(f, h, Q, P0, sigma_r, sigma_phi, x0)
             x_history = np.zeros((6, len(measurements[0, :])))
 
             try:
@@ -266,7 +266,7 @@ def optimize_EKF(f, h, F, H, x0, var_r, var_phi, dt, N):
 
         total_ospa = 0
         for measurements, trueTrack in evaluation_data:
-            KF = ExtendedKalmanFilter(f, h, F, H, Q, R, x0, P0)
+            KF = ExtendedKalmanFilter(f, h, F, H, Q, R, P0, x0)
             x_history = np.zeros((6, len(measurements[0, :])))
 
             try:
@@ -337,7 +337,7 @@ def optimize_UKF(f, h, x0, beta, kappa, var_r, var_phi, dt, N):
         total_ospa = 0
         for measurements, trueTrack in evaluation_data:
             # Define the kalman filter.
-            KF = UnscentedKalmanFilter(f, h, Q, R, x0, P0, alpha, beta, kappa)
+            KF = UnscentedKalmanFilter(f, h, Q, R, P0, alpha, beta, kappa, x0)
 
             # Initialize the history array.
             x_history = np.zeros((6, len(measurements[0, :])))
