@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 from Evaluation_Metrics import ospa_stonesoup
 from Kalman_Filters import UCMKalmanFilter, ExtendedKalmanFilter, UnscentedKalmanFilter
+from Utils.DecodeGPS import gps_to_ground_truth, interpolate_ground_truth
 from Utils.Wrapper_Functions import (
     UCMKFPredictor,
     UCMKFUpdater,
@@ -198,7 +199,7 @@ measurement_model = (
 )
 
 # start the clock for easy timestamp management
-start_time = datetime.now()
+start_time = datetime(2026, 5, 22, 8, 27, 25, 51)
 
 # Get the detections from Abdullahs group
 detections = ReadDetections(
@@ -206,6 +207,10 @@ detections = ReadDetections(
     measurement_model=measurement_model,
     dt=dt,
     start_time=start_time,
+)
+
+ground_truth = gps_to_ground_truth(
+    filepath="Data/GPSdata/May-22nd-2026-10-27AM-Flight-Airdata.csv", model="cv"
 )
 
 
@@ -302,9 +307,15 @@ for n, measurements in enumerate(detections):
     tracks |= initiator.initiate(measurements - associated_measurements, timestamp)
     all_tracks |= tracks
 
+interpolated_ground_truth = interpolate_ground_truth(ground_truth[0], timesteps, model)
+
+# Evaluate using the ALIGNED ground truth
+ospa_stonesoup(all_tracks, interpolated_ground_truth)
+
 
 # Plotting
 plotter = Plotter()
+plotter.plot_ground_truths(ground_truth, [0, 2] if model == "cv" else [0, 3])
 plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3])
 plotter.plot_measurements(
     [det for det_set in detections for det in det_set],
@@ -331,5 +342,6 @@ from stonesoup.plotter import AnimatedPlotterly
 plotter = AnimatedPlotterly(timesteps, tail_length=1)
 plotter.fig.update_layout(width=700, height=700)
 plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=True)
+plotter.plot_ground_truths(ground_truth, [0, 2] if model == "cv" else [0, 3])
 plotter.plot_measurements(detections, [0, 2] if model == "cv" else [0, 3])
 plotter.fig.show()
