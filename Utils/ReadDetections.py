@@ -176,11 +176,11 @@ if __name__ == '__main__':
         noise_covar=R
     )
 
-    detections = ReadDetections(filepath="../Data/flight5_rd_guided_music_range_angle_velocity_detections_ndoppler50.csv",
+    detections = ReadDetections(filepath="../Data/Random/flight5_rd_guided_music_range_angle_velocity_detections_ndoppler50.csv",
                                 measurement_model=measurement_model,
                                 dt = 0.0112*5,
                                 start_time=datetime.now()
-    )
+                                )
     print(len(list(detections)))
 
 
