@@ -59,7 +59,7 @@ deletion_covariance = 25
 initiation_points = 5
 
 
-dt = 0.0112 * ndoppler / 10
+dt = 224e-6 * ndoppler
 
 
 # Initialize the functions and matrices for the Kalman filter.
@@ -199,18 +199,20 @@ measurement_model = (
 )
 
 # start the clock for easy timestamp management
-start_time = datetime(2026, 5, 22, 8, 27, 25, 51)
+start_time = datetime(2026, 5, 28, 8, 10, 18, 33)
+
+
 
 # Get the detections from Abdullahs group
 detections = ReadDetections(
-    filepath=f"Data/flight2/flight{flight_num}-sidetoside-tiny_tinyrad_master_1_rd_guided_mvdr_range_angle_velocity_detections_ndoppler{ndoppler}.csv",
+    filepath=f"Data/Hovering/flight6-hovering_tinyrad_master_1_USE_BG_True_ANGLE_argmax_rd_guided_mvdr_range_angle_velocity_detections_ndoppler250.csv",
     measurement_model=measurement_model,
     dt=dt,
     start_time=start_time,
 )
 
 ground_truth = gps_to_ground_truth(
-    filepath="Data/GPSdata/May-22nd-2026-10-27AM-Flight-Airdata.csv", model="cv"
+    filepath="Data/Maxrange/flight3-maxrange-GPS.csv", model="cv"
 )
 
 
@@ -339,7 +341,7 @@ plotter.fig.show()
 plt.show()
 from stonesoup.plotter import AnimatedPlotterly
 
-plotter = AnimatedPlotterly(timesteps, tail_length=1)
+plotter = AnimatedPlotterly(timesteps, tail_length=0.5)
 plotter.fig.update_layout(width=700, height=700)
 plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=True)
 plotter.plot_ground_truths(ground_truth, [0, 2] if model == "cv" else [0, 3])

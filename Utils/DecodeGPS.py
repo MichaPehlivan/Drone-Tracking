@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
-
+from matplotlib.animation import PillowWriter
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
+from matplotlib.widgets import Slider
+from matplotlib.animation import FuncAnimation
 # for the gps transformation, coordinate reference system en transformer -> reference is bij de radar (0,0)
 from pyproj import CRS, Transformer
 
@@ -103,6 +104,7 @@ def gps_to_cartesian(**kwargs):
     gps_to_sensor = Transformer.from_crs(wgs_84, sensor_position)
 
 
+
     path = kwargs['filepath']
     df = pd.read_csv(path)
 
@@ -112,39 +114,95 @@ def gps_to_cartesian(**kwargs):
     x, y = gps_to_sensor.transform(df.iloc[:,2], df.iloc[:,3])
 
 
+
     pointx, pointy = gps_to_sensor.transform(calibrationlat, calibrationlon)
 
+
+
     print(pointx, pointy)
-    # print(df.iloc[:,0])
-    # print(df.iloc[:, 2])
-    # print(df.iloc[:, 3])
 
 
     center_angle = np.arctan2(pointy, pointx)
-    fov_angle_1 = center_angle + np.radians(45)
-    fov_angle_2 = center_angle - np.radians(45)
+    fov_angle_1 = np.radians(45)
+    fov_angle_2 = -np.radians(45)
     R = 20
+    x_rotated = x * np.cos(-center_angle) - y * np.sin(-center_angle)
+    y_rotated = x * np.sin(-center_angle) + y * np.cos(-center_angle)
 
     line1_x = [0, R * np.cos(fov_angle_1)]
     line1_y = [0, R * np.sin(fov_angle_1)]
     line2_x = [0, R * np.cos(fov_angle_2)]
     line2_y = [0, R * np.sin(fov_angle_2)]
 
-    plt.scatter(0, 0, color='red', s=50, label='Sensor')
-    plt.plot(line1_x, line1_y, 'g--', label='FOV Border (+45°)')
-    plt.plot(line2_x, line2_y, 'g--', label='FOV Border (-45°)')
-    print(np.sqrt(pointx ** 2 + pointy ** 2))
-    plt.scatter(x, y)
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.grid(True)
-    plt.legend()
-    plt.show()
+    fig, ax = plt.subplots(figsize=(8, 6))
 
-    plt.title("Cartesian plot of the GPS track")
+    ax.set_title("Cartesian plot of the GPS track")
+    ax.set_aspect('equal', adjustable='box')
+    ax.grid(True)
+
+
+    ax.scatter(0, 0, color='red', s=50, label='Sensor', zorder=5)
+    ax.plot(line1_x, line1_y, 'g--', label='FOV Border (+45°)')
+    ax.plot(line2_x, line2_y, 'g--', label='FOV Border (-45°)')
+
+    track_scatter = ax.scatter([], [], color='blue', alpha=0.6)
+
+    ax.set_xlim(-1,15)
+    ax.set_ylim(-8,8)
+    ax.legend()
+
+    def update(frame):
+
+        data = np.stack((x_rotated[:frame + 1], y_rotated[:frame + 1]), axis=-1)
+        track_scatter.set_offsets(data)
+
+        current_x, current_y = x_rotated[frame], y_rotated[frame]
+        distance = np.sqrt(current_x ** 2 + current_y ** 2)
+        print(f"Frame {frame:03d} | Distance: {distance:.2f}")
+
+        return track_scatter,
+
+
+    ani = FuncAnimation(
+        fig,
+        update,
+        frames=len(x),
+        interval=100,
+        blit=True,
+        repeat=True
+    )
+
+    plt.show()
+    # xlist = []
+    # ylist = []
+    #
+    # fig = plt.figure()
+    # l, = plt.plot([],[], "k-")
+
+    # writer = PillowWriter(fps=10)
+    # with writer.saving(fig, "gpstrack.gif", 100):
+    #     for xval in x:
+    #         xlist.append(xval)
+    #         ylist.append(1)
+    #
+    #         l.set_data(xlist,ylist)
+    #         writer.grab_frame()
+
+    # plt.scatter(0, 0, color='red', s=50, label='Sensor')
+    # plt.plot(line1_x, line1_y, 'g--', label='FOV Border (+45°)')
+    # plt.plot(line2_x, line2_y, 'g--', label='FOV Border (-45°)')
+    # print(np.sqrt(pointx ** 2 + pointy ** 2))
+    # plt.scatter(x, y)
+    # plt.gca().set_aspect('equal', adjustable='box')
+    # plt.grid(True)
+    # plt.legend()
+    # plt.show()
+    #
+    # plt.title("Cartesian plot of the GPS track")
 
     return x, y
 
 if __name__ == "__main__":
-    gps_to_ground_truth(
-        filepath="../Data/GPSdata/May-22nd-2026-10-27AM-Flight-Airdata.csv", model="ca"
-    )
+
+
+    gps_to_cartesian(filepath="../Data/Hovering/flight6-hovering-GPS.csv")
