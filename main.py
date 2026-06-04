@@ -202,7 +202,6 @@ measurement_model = (
 start_time = datetime(2026, 5, 28, 8, 10, 18, 33)
 
 
-
 # Get the detections from Abdullahs group
 detections = ReadDetections(
     filepath=f"Data/Hovering/flight6-hovering_tinyrad_master_1_USE_BG_True_ANGLE_argmax_rd_guided_mvdr_range_angle_velocity_detections_ndoppler250.csv",
@@ -212,7 +211,7 @@ detections = ReadDetections(
 )
 
 ground_truth = gps_to_ground_truth(
-    filepath="Data/Maxrange/flight3-maxrange-GPS.csv", model="cv"
+    filepath="Data/Hovering/flight6-hovering-GPS.csv", model="cv"
 )
 
 
