@@ -41,6 +41,25 @@ def simulateLinearTrack(v_x, v_y, x0, y0, num_datapoints, dt, sigma):
     return measurements, trueTrack
 
 
+"""
+simulateLinearTrackPolar simulates a linear path taken by a drone
+
+input:
+    v_x: initial velocity in x-direction. (m/s)
+    v_y: initial velocity in y-direction. (m/s)
+    x0: initial x-position. (m)
+    y0: initial y-position. (m)
+    num_datapoints: number of datapoints in the track.
+    dt: timestep (s).
+    sigma: standard deviations of the measurement noise.
+
+output:
+    measurements: [2 x num_datapoints] array 
+                  (bearing,range coordinates as rows, samples as columns)
+
+                  containing simulated measurements for a straight-line drone track.
+"""
+
 def simulateLinearTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigma_phi):
     x = x0
     y = y0
@@ -63,7 +82,24 @@ def simulateLinearTrackPolar(v_x, v_y, x0, y0, num_datapoints, dt, sigma_r, sigm
 
     return measurements, trueTrack
 
+"""
+simulateRandomAccelTrackPolar simulates a linear path taken by a drone
 
+input:
+    v_x: initial velocity in x-direction. (m/s)
+    v_y: initial velocity in y-direction. (m/s)
+    x0: initial x-position. (m)
+    y0: initial y-position. (m)
+    num_datapoints: number of datapoints in the track.
+    dt: timestep (s).
+    sigma_r/phi: standard deviations of the measurement noise.
+    measure_velocity: standard:False, whether to output velocity info.
+output:
+    measurements: [2 x num_datapoints] array 
+                  (bearing,range coordinates as rows, samples as columns)
+
+                  containing simulated measurements for a straight-line drone track.
+"""
 def simulateRandomAccelTrackPolar(
     v_x,
     v_y,
@@ -80,7 +116,7 @@ def simulateRandomAccelTrackPolar(
     curr_vx, curr_vy = v_x, v_y
     trueTrack = np.zeros((2, num_datapoints))
     measurements = np.zeros((3 if measure_velocity else 2, num_datapoints))
-    v_max = 16.7
+    v_max = 12
     g = 9.81
 
     maneuvering = False
@@ -132,7 +168,24 @@ def simulateRandomAccelTrackPolar(
 
     return measurements, trueTrack
 
+"""
+simulateRandomAccelHoverTrackPolar simulates a linear path taken by a drone
 
+input:
+    v_x: initial velocity in x-direction. (m/s)
+    v_y: initial velocity in y-direction. (m/s)
+    x0: initial x-position. (m)
+    y0: initial y-position. (m)
+    num_datapoints: number of datapoints in the track.
+    dt: timestep (s).
+    sigma_r/phi: standard deviations of the measurement noise.
+    measure_velocity: standard:False, whether to output velocity info.
+output:
+    measurements: [2 x num_datapoints] array 
+                  (bearing,range coordinates as rows, samples as columns)
+
+                  containing simulated measurements for a straight-line drone track.
+"""
 def simulateRandomAccelHoverTrackPolar(
     v_x,
     v_y,
@@ -152,7 +205,7 @@ def simulateRandomAccelHoverTrackPolar(
     trueTrack = np.zeros((2, num_datapoints))
     measurements = np.zeros((3 if measure_velocity else 2, num_datapoints))
 
-    v_max = 16.7  # m/s
+    v_max = 12 # m/s
     state = "MOVING"
     hover_timer = 0
 
@@ -165,7 +218,7 @@ def simulateRandomAccelHoverTrackPolar(
 
         if state == "MOVING":
 
-            if np.random.rand() < 0.5 * dt and i > 5:
+            if np.random.rand() < 0.1 * dt and i > 5:
                 state = "BRAKING"
 
             elif np.random.rand() < dt:
@@ -225,3 +278,27 @@ def simulateRandomAccelHoverTrackPolar(
             measurements[:, i] = [phi + sigma_phi * randn(), r + sigma_r * randn()]
 
     return measurements, trueTrack
+
+if __name__ == "__main__":
+    np.random.seed(4)
+    from Utils import animate_track
+    import matplotlib.pyplot as plt
+    detections, ground_truth = simulateRandomAccelHoverTrackPolar(
+        v_x=1,
+        v_y=1,
+        x0=5,
+        y0=5,
+        num_datapoints=150,
+        dt=0.1,
+        sigma_r= np.sqrt(0.383),
+        sigma_phi = np.sqrt(0.000585),
+        sigma_vr=0,
+        measure_velocity=False,
+    )
+    plt.scatter(detections[1, :]*np.cos(detections[0, :]), detections[1,: ]*np.sin(detections[0, :]), label="Detections")
+    plt.grid()
+
+    plt.title("Detections based on ground truth")
+    plt.show()
+
+    animate_track(ground_truth, 0.1)

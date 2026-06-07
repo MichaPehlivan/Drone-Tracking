@@ -29,18 +29,18 @@ from stonesoup.hypothesiser.distance import DistanceHypothesiser
 from stonesoup.plotter import Plotter
 
 # MAIN FUNCTION CONFIGURATION
-
+print("Initializing...")
 # filter and model type
-filter = "ukf"  # "ucmkf", "ekf", or "ukf"
+filter = "ekf"  # "ucmkf", "ekf", or "ukf"
 model = "cv"  # "cv" or "ca"
 
 # variances in measurement dimensions.
-range_sigma = 3
-azimuth_sigma = np.deg2rad(3)
+range_sigma = np.sqrt(0.344)
+azimuth_sigma = np.sqrt(0.00005)
 
 # data selection
 flight_num = 2
-ndoppler = 250
+ndoppler = 500
 
 # Kalman Filter tuning
 UCMKF_Q = 1
@@ -54,12 +54,12 @@ UKF_P0 = 1
 alpha = 1
 
 # StoneSoup parameters
-association_distance = 2
-deletion_covariance = 25
-initiation_points = 5
+association_distance = 4
+deletion_covariance = 15
+initiation_points = 15
 
 
-dt = 224e-6 * ndoppler
+dt = 201e-6 * ndoppler
 
 
 # Initialize the functions and matrices for the Kalman filter.
@@ -106,15 +106,15 @@ H = lambda x: (
     np.array(
         [
             [
-                (-x[2]) / (x[0] ** 2 + x[2] ** 2),
+                (-x[2]) / (1e-9+x[0] ** 2 + x[2] ** 2),
                 0,
-                x[0] / (x[0] ** 2 + x[2] ** 2),
+                x[0] / (1e-9+x[0] ** 2 + x[2] ** 2 ),
                 0,
             ],
             [
-                x[0] / np.sqrt(x[0] ** 2 + x[2] ** 2),
+                x[0] / np.sqrt(1e-9+x[0] ** 2 + x[2] ** 2),
                 0,
-                x[2] / np.sqrt(x[0] ** 2 + x[2] ** 2),
+                x[2] / np.sqrt(1e-9+x[0] ** 2 + x[2] ** 2),
                 0,
             ],
         ]
@@ -144,7 +144,7 @@ H = lambda x: (
 
 # Process noise matrix.
 # IMPORTANT: the process noise is dependent on dt
-var_a = 0.5
+var_a = 2
 Q1D_generator = lambda dt: (
     var_a
     * np.array(
@@ -185,8 +185,8 @@ x0 = (
 P0 = np.eye(4) if model == "cv" else np.eye(6)
 
 # convert to variance.
-var_r = range_sigma**2
-var_phi = azimuth_sigma**2
+var_r = 0.444 #Experimentally obtained values
+var_phi =  0.000720 #Also experimental (Rad)
 
 # Initialize measurement error matrix.
 R = np.array([[var_phi, 0], [0, var_r]])
@@ -202,19 +202,23 @@ measurement_model = (
 start_time = datetime(2026, 5, 28, 8, 10, 18, 33)
 
 
-
+print("Wrapping detections...")
 # Get the detections from Abdullahs group
 detections = ReadDetections(
-    filepath=f"Data/Hovering/flight6-hovering_tinyrad_master_1_USE_BG_True_ANGLE_argmax_rd_guided_mvdr_range_angle_velocity_detections_ndoppler250.csv",
+    filepath=f"Data/sidetoside/detections_mvdr_argmax_10db_500.csv",
     measurement_model=measurement_model,
     dt=dt,
     start_time=start_time,
 )
+time_duration_recording_s = timedelta(seconds=dt) * len(detections)
+print(time_duration_recording_s)
+
 
 ground_truth = gps_to_ground_truth(
-    filepath="Data/Maxrange/flight3-maxrange-GPS.csv", model="cv"
+    filepath="Data/sidetoside/flight2-sidetoside-GPS.csv", model="cv", start_time=start_time
 )
 
+print("More initializing...")
 
 # ___Initialize the filter____
 kf = (
@@ -286,6 +290,7 @@ tracks, all_tracks = set(), set()
 timesteps = []
 previous_timestamp = None
 
+print("Starting filtering...")
 for n, measurements in enumerate(detections):
     timestamp = start_time + timedelta(seconds=dt * n)
     timesteps.append(timestamp)
@@ -309,12 +314,13 @@ for n, measurements in enumerate(detections):
     tracks |= initiator.initiate(measurements - associated_measurements, timestamp)
     all_tracks |= tracks
 
+print("Cycles completed, now calculating OSPA")
 interpolated_ground_truth = interpolate_ground_truth(ground_truth[0], timesteps, model)
 
 # Evaluate using the ALIGNED ground truth
 ospa_stonesoup(all_tracks, interpolated_ground_truth)
 
-
+print("Done, Plotting...")
 # Plotting
 plotter = Plotter()
 plotter.plot_ground_truths(ground_truth, [0, 2] if model == "cv" else [0, 3])
@@ -341,9 +347,15 @@ plotter.fig.show()
 plt.show()
 from stonesoup.plotter import AnimatedPlotterly
 
-plotter = AnimatedPlotterly(timesteps, tail_length=0.5)
+plotter = AnimatedPlotterly(timesteps, tail_length=0.1)
+plotter.fig.update_layout(
+    yaxis=dict(
+        scaleanchor="x",
+        scaleratio=1
+    )
+)
 plotter.fig.update_layout(width=700, height=700)
-plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=True)
-plotter.plot_ground_truths(ground_truth, [0, 2] if model == "cv" else [0, 3])
+plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=False)
+plotter.plot_ground_truths(ground_truth, mapping=[0, 2] if model == "cv" else [0, 3])
 plotter.plot_measurements(detections, [0, 2] if model == "cv" else [0, 3])
 plotter.fig.show()

@@ -17,7 +17,8 @@ def gps_to_ground_truth(**kwargs):
 
     SensorLat = 51.98880548
     SensorLon = 4.390007015
-
+    start_time = kwargs["start_time"] + timedelta(seconds=0)
+    i=0
     wgs_84 = CRS("EPSG:4326")
     sensor_position = CRS(
         f"+proj=ortho +lat_0={SensorLat} +lon_0={SensorLon} +ellps=WGS84 +datum=WGS84 +units=m +type=crs"
@@ -27,21 +28,29 @@ def gps_to_ground_truth(**kwargs):
     path = kwargs["filepath"]
     df = pd.read_csv(path)
 
-    ground_truth = GroundTruthPath()
+    delay = 40
+    delay_indices = int(delay*10)
+    df = df.iloc[delay_indices:]
 
+    timelength = timedelta(milliseconds=int(df.iloc[-1, 0] - df.iloc[0,0]))
+    print(timelength)
+    ground_truth = GroundTruthPath()
+    ts = []
     for _, row in df.iterrows():
+
         lat = row["latitude"]
         lon = row["longitude"]
 
-        time = row["datetime(utc)"]
-        timestamp = datetime.strptime(time, "%Y-%m-%d %H:%M:%S") + timedelta(seconds=38)
-
+        # time = row["datetime(utc)"]
+        # timestamp = datetime.strptime(time, "%Y-%m-%d %H:%M:%S") + timedelta(seconds=38)
+        timestamp = start_time + i*timedelta(milliseconds=100) # 100 ms per GPS thing
+        i+=1
         x, y = gps_to_sensor.transform(lon, lat)
 
         # offset angle
         angle_offset = np.deg2rad(70)
-        x_offset = 2.6
-        y_offset = 5.4
+        x_offset = 0
+        y_offset = 0
         x_final = x * np.cos(angle_offset) - y * np.sin(angle_offset) + x_offset
         y_final = x * np.sin(angle_offset) + y * np.cos(angle_offset) + y_offset
 
@@ -56,8 +65,16 @@ def gps_to_ground_truth(**kwargs):
                 timestamp=timestamp,
             )
         )
+        ts.append(timestamp)
         ground_truth.append(truth_state)
 
+    # plotting test
+    # from stonesoup.plotter import AnimatedPlotterly
+    # print("plotting")
+    # plotter = AnimatedPlotterly(ts, tail_length=0.8)
+    # plotter.fig.update_layout(width=700, height=700)
+    # plotter.plot_ground_truths([ground_truth], mapping=[0, 2] if kwargs["model"] == "cv" else [0, 3])
+    # plotter.fig.show()
     return [ground_truth]
 
 
@@ -142,8 +159,8 @@ def gps_to_cartesian(**kwargs):
 
 
     ax.scatter(0, 0, color='red', s=50, label='Sensor', zorder=5)
-    ax.plot(line1_x, line1_y, 'g--', label='FOV Border (+45°)')
-    ax.plot(line2_x, line2_y, 'g--', label='FOV Border (-45°)')
+    ax.plot(line1_x, line1_y, 'g--', label='FOV Border (45°)')
+    ax.plot(line2_x, line2_y, 'g--')
 
     track_scatter = ax.scatter([], [], color='blue', alpha=0.6)
 
@@ -158,7 +175,8 @@ def gps_to_cartesian(**kwargs):
 
         current_x, current_y = x_rotated[frame], y_rotated[frame]
         distance = np.sqrt(current_x ** 2 + current_y ** 2)
-        print(f"Frame {frame:03d} | Distance: {distance:.2f}")
+        angle = np.arctan2(current_y, current_x)
+        print(f"Frame {frame:03d} | Distance: {distance:.4f} | Angle: {angle:.4f}")
 
         return track_scatter,
 
@@ -205,4 +223,5 @@ def gps_to_cartesian(**kwargs):
 if __name__ == "__main__":
 
 
-    gps_to_cartesian(filepath="../Data/Hovering/flight6-hovering-GPS.csv")
+    # gps_to_cartesian(filepath="../Data/Hovering/flight6-hovering-GPS.csv")
+    gps_to_cartesian(filepath="../Data/GPSdata/May-22nd-2026-10-27AM-Flight-Airdata.csv")

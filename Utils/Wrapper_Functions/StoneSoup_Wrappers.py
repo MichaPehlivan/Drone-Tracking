@@ -300,7 +300,67 @@ def SimulatorPolar_stonesoup(**kwargs):
 
     return all_detections, ground_truth
 
+"""
+input:
+    add_clutter: standard:False whether to add clutter detections
+    start_time: time to provide timestamps
+    sim_function = the function used to simulate (SimulateRandomAccelHoverTrackPolar, SimulateLinearTrackPolar etc.)
+    measurement_model = stonesoup object containing the variances and the information that it is [bearing, range]
+    dt: timestep
+    drone_configs: all the parameters for the sim_functions (for multiple drones)
+    delay_steps: timedelay for the drone (inside drone config)
+output:
+    Stone Soup GroundTruth objects
+    Stone Soup Detection objects
+    
+    
+    example call!!!:
+    measurement_model = CartesianToBearingRange(ndim_state=6, mapping=(0, 3), noise_covar=R)
 
+    start_time = datetime.now()
+    
+    shared_config = {
+        "sim_function": simulateRandomAccelTrackPolar,
+        "start_time": start_time,
+        "measurement_model": measurement_model,
+        "num_datapoints": num_datapoints,
+        "dt": dt,
+        "sigma_r": range_sigma,
+        "sigma_phi": azimuth_sigma,
+        "add_clutter": True,
+    }
+    
+    drones_params = [
+        {"x0": x_initial, "y0": y_initial, "v_x": 5.0, "v_y": 5.0},
+        {"x0": x_initial + 100, "y0": y_initial, "v_x": -5, "v_y": 5},
+        {
+            "x0": x_initial + 100,
+            "y0": y_initial + 70,
+            "v_x": -5,
+            "v_y": 1,
+            "delay_steps": 10,
+        },
+        {
+            "x0": x_initial + 150,
+            "y0": y_initial + 70,
+            "v_x": 1,
+            "v_y": 4,
+            "delay_steps": 50,
+        },
+        # {
+        #     "x0": x_initial + 30,
+        #     "y0": y_initial + 90,
+        #     "v_x": 0,
+        #     "v_y": -4,
+        #     "delay_steps": 30,
+        # },
+    ]
+    
+    detections, ground_truths = SimulatorPolarMultitarget_stonesoup(
+        **shared_config, drone_configs=drones_params
+    )
+
+"""
 def SimulatorPolarMultitarget_stonesoup(**kwargs):
     add_clutter = kwargs.pop("add_clutter", False)
     start_time = kwargs.pop("start_time")
@@ -310,7 +370,7 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
 
     drone_configs = kwargs.pop(
         "drone_configs", [{}, {}]
-    )  # Defaults to two empty drones
+    )
     measurements_list = []
     true_tracks_list = []
     delays_list = []
@@ -381,12 +441,3 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
 
     return all_detections, ground_truths
 
-
-# def RandomAccelHoverTrackPolar_stonesoup(**kwargs):
-#
-#     dt = kwargs.pop('dt', 1.0)
-#     measurements, true_track = simulateRandomAccelHoverTrackPolar(**kwargs)
-#
-#     for i in range(measurements.shape[1]):
-#         yield {Detection(StateVector(measurements[:, i]), timestamp=i*dt)}
-# ^^ yield cool voor testen van de real time versie!!

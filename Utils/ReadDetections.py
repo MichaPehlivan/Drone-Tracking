@@ -52,25 +52,41 @@ def ReadDetections(**kwargs):
     df = pd.read_csv(path)
 
     max_blocknum = max(df.iloc[:,0])
-    # print(max_blocknum)
+    min_blocknum = min(df.iloc[:,0])
+
     grouped = df.groupby('block')
 
     all_detections = []
+    if path == "Data/sidetoside/detections_mvdr_argmax_10db_500.csv":
+        for i in range(min_blocknum, max_blocknum + 1):
+            timestamp = start_time + timedelta(seconds=(i-min_blocknum) * dt)
 
-    for i in range(1, max_blocknum+1):
-        timestamp = start_time + timedelta(seconds=i * dt)
+            block_detections = set()
 
-        block_detections = set()
+            if i in grouped.groups:
+                for col, row in grouped.get_group(i).iterrows():
+                    det = Detection(
+                        state_vector=StateVector([np.deg2rad(row['angle']), row['range']]),
+                        timestamp=timestamp,
+                        measurement_model=measurement_model
+                    )
+                    block_detections.add(det)
+            all_detections.append(block_detections)
+    else:
+        for i in range(min_blocknum, max_blocknum+1):
+            timestamp = start_time + timedelta(seconds=(i-min_blocknum) * dt)
 
-        if i in grouped.groups:
-            for col, row in grouped.get_group(i).iterrows():
-                det = Detection(
-                    state_vector=StateVector([np.deg2rad(row['angle_deg']), row['range_m']]),
-                    timestamp=timestamp,
-                    measurement_model=measurement_model
-                )
-                block_detections.add(det)
-        all_detections.append(block_detections)
+            block_detections = set()
+
+            if i in grouped.groups:
+                for col, row in grouped.get_group(i).iterrows():
+                    det = Detection(
+                        state_vector=StateVector([np.deg2rad(row['angle_deg']), row['range_m']]),
+                        timestamp=timestamp,
+                        measurement_model=measurement_model
+                    )
+                    block_detections.add(det)
+            all_detections.append(block_detections)
 
     return all_detections
 
