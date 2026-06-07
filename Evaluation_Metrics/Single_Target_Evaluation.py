@@ -72,6 +72,13 @@ def ospa_stonesoup(track, ground_truth, c=10, p=1):
         linestyle="--",
         label=f"Mean OSPA ({np.mean(ospa_values):.2f}m)",
     )
+    ospa_values_in_frame = [x for x in ospa_values if x < max(ospa_values)]
+    plt.axhline(
+        np.mean(ospa_values_in_frame),
+        color="blue",
+        linestyle="--",
+        label=f"Mean OSPA in frame ({np.mean(ospa_values_in_frame):.2f}m)",
+    )
 
     plt.title("OSPA Metric Evaluation Over Time", fontsize=11, fontweight="bold")
     plt.xlabel("Simulation Time (seconds)")
@@ -81,7 +88,7 @@ def ospa_stonesoup(track, ground_truth, c=10, p=1):
     plt.show()
 
 
-def mean_ospa_stonesoup(track, ground_truth, c=10, p=1):
+def mean_ospa_stonesoup(track, ground_truth, c=10, p=1, in_frame=False):
     pos_measure = Euclidean(mapping=[0, 3])
 
     ospa_generator = OSPAMetric(c=c, p=p, measure=pos_measure, generator_name="OSPA")
@@ -96,4 +103,8 @@ def mean_ospa_stonesoup(track, ground_truth, c=10, p=1):
     ospa_metric = metrics["OSPA distances"]
 
     ospa_values = [metric.value for metric in ospa_metric.value]
-    return np.mean(ospa_values)
+    if in_frame:
+        ospa_values_in_frame = [x for x in ospa_values if x < max(ospa_values)]
+        return np.mean(ospa_values_in_frame)
+    else:
+        return np.mean(ospa_values)
