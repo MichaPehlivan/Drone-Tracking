@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from Evaluation_Metrics import ospa_stonesoup
 from Kalman_Filters import UCMKalmanFilter, ExtendedKalmanFilter, UnscentedKalmanFilter
 from Utils.DecodeGPS import gps_to_ground_truth, interpolate_ground_truth
+from Utils.KalmanTuner_stonesoup import optimize_filter_on_data
 from Utils.Wrapper_Functions import (
     UCMKFPredictor,
     UCMKFUpdater,
@@ -41,13 +42,15 @@ azimuth_sigma = np.sqrt(0.00005)
 # data selection
 flight_num = 2
 ndoppler = 500
+detections_path = f"Data/sidetoside/detections_mvdr_argmax_10db_500.csv"
+gps_path = "Data/sidetoside/flight2-sidetoside-GPS.csv"
 
 # Kalman Filter tuning
 UCMKF_Q = 1
 UCMKF_P0 = 1
-EKF_Q = 1
-EKF_R = 1
-EKF_P0 = 1
+EKF_Q = 0.008696374612362048
+EKF_R = 27.791100788725466
+EKF_P0 = 0.004323929221689231
 UKF_Q = 1
 UKF_R = 1
 UKF_P0 = 1
@@ -205,7 +208,7 @@ start_time = datetime(2026, 5, 28, 8, 10, 18, 33)
 print("Wrapping detections...")
 # Get the detections from Abdullahs group
 detections = ReadDetections(
-    filepath=f"Data/sidetoside/detections_mvdr_argmax_10db_500.csv",
+    filepath=detections_path,
     measurement_model=measurement_model,
     dt=dt,
     start_time=start_time,
@@ -215,7 +218,7 @@ print(time_duration_recording_s)
 
 
 ground_truth = gps_to_ground_truth(
-    filepath="Data/sidetoside/flight2-sidetoside-GPS.csv",
+    filepath=gps_path,
     model="cv",
     start_time=start_time,
 )
@@ -287,72 +290,86 @@ initiator = MultiMeasurementInitiator(
     min_points=initiation_points,
 )
 
-
 tracks, all_tracks = set(), set()
 timesteps = []
 previous_timestamp = None
 
-print("Starting filtering...")
-for n, measurements in enumerate(detections):
-    timestamp = start_time + timedelta(seconds=dt * n)
-    timesteps.append(timestamp)
+# print("Starting filtering...")
+# for n, measurements in enumerate(detections):
+#     timestamp = start_time + timedelta(seconds=dt * n)
+#     timesteps.append(timestamp)
 
-    hypotheses = data_associator.associate(tracks, measurements, timestamp)
-    associated_measurements = set()
+#     hypotheses = data_associator.associate(tracks, measurements, timestamp)
+#     associated_measurements = set()
 
-    for track in tracks:
-        hypothesis = hypotheses[track]
+#     for track in tracks:
+#         hypothesis = hypotheses[track]
 
-        if hypothesis.measurement:
-            post = updater.update(hypothesis)
-            track.append(post)
+#         if hypothesis.measurement:
+#             post = updater.update(hypothesis)
+#             track.append(post)
 
-            associated_measurements.add(hypothesis.measurement)
+#             associated_measurements.add(hypothesis.measurement)
 
-        else:
-            track.append(hypothesis.prediction)
+#         else:
+#             track.append(hypothesis.prediction)
 
-    tracks -= deleter.delete_tracks(tracks)
-    tracks |= initiator.initiate(measurements - associated_measurements, timestamp)
-    all_tracks |= tracks
+#     tracks -= deleter.delete_tracks(tracks)
+#     tracks |= initiator.initiate(measurements - associated_measurements, timestamp)
+#     all_tracks |= tracks
 
-print("Cycles completed, now calculating OSPA")
-interpolated_ground_truth = interpolate_ground_truth(ground_truth[0], timesteps, model)
+# print("Cycles completed, now calculating OSPA")
+# interpolated_ground_truth = interpolate_ground_truth(ground_truth[0], timesteps, model)
 
-# Evaluate using the ALIGNED ground truth
-ospa_stonesoup(all_tracks, interpolated_ground_truth)
+# # Evaluate using the ALIGNED ground truth
+# ospa_stonesoup(all_tracks, interpolated_ground_truth)
 
-print("Done, Plotting...")
-# Plotting
-plotter = Plotter()
-plotter.plot_ground_truths(ground_truth, [0, 2] if model == "cv" else [0, 3])
-plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3])
-plotter.plot_measurements(
-    [det for det_set in detections for det in det_set],
-    [0, 2] if model == "cv" else [0, 3],
-    measurement_model=measurement_model,
+# print("Done, Plotting...")
+# # Plotting
+# plotter = Plotter()
+# plotter.plot_ground_truths(ground_truth, [0, 2] if model == "cv" else [0, 3])
+# plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3])
+# plotter.plot_measurements(
+#     [det for det_set in detections for det in det_set],
+#     [0, 2] if model == "cv" else [0, 3],
+#     measurement_model=measurement_model,
+# )
+
+# ax = plt.gca()
+# x_min, x_max = ax.get_xlim()
+# y_min, y_max = ax.get_ylim()
+# data_min = min(x_min, y_min)
+# data_max = max(x_max, y_max)
+# # ax.set_xlim(data_min, data_max)
+# # ax.set_ylim(data_min, data_max)
+# ax.set_xlim(-10, 50)
+# ax.set_ylim(-30, 30)
+# ax.set_aspect("equal", adjustable="box")
+
+# plt.grid()
+# plotter.fig.show()
+# plt.show()
+# from stonesoup.plotter import AnimatedPlotterly
+
+# plotter = AnimatedPlotterly(timesteps, tail_length=0.1)
+# plotter.fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
+# plotter.fig.update_layout(width=700, height=700)
+# plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=False)
+# plotter.plot_ground_truths(ground_truth, mapping=[0, 2] if model == "cv" else [0, 3])
+# plotter.plot_measurements(detections, [0, 2] if model == "cv" else [0, 3])
+# plotter.fig.show()
+
+optimize_filter_on_data(
+    x0,
+    range_sigma,
+    azimuth_sigma,
+    dt,
+    start_time,
+    model,
+    filter,
+    association_distance,
+    deletion_covariance,
+    initiation_points,
+    detections_path,
+    gps_path,
 )
-
-ax = plt.gca()
-x_min, x_max = ax.get_xlim()
-y_min, y_max = ax.get_ylim()
-data_min = min(x_min, y_min)
-data_max = max(x_max, y_max)
-# ax.set_xlim(data_min, data_max)
-# ax.set_ylim(data_min, data_max)
-ax.set_xlim(-10, 50)
-ax.set_ylim(-30, 30)
-ax.set_aspect("equal", adjustable="box")
-
-plt.grid()
-plotter.fig.show()
-plt.show()
-from stonesoup.plotter import AnimatedPlotterly
-
-plotter = AnimatedPlotterly(timesteps, tail_length=0.1)
-plotter.fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
-plotter.fig.update_layout(width=700, height=700)
-plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=False)
-plotter.plot_ground_truths(ground_truth, mapping=[0, 2] if model == "cv" else [0, 3])
-plotter.plot_measurements(detections, [0, 2] if model == "cv" else [0, 3])
-plotter.fig.show()
