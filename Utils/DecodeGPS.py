@@ -14,10 +14,10 @@ from stonesoup.types.groundtruth import GroundTruthPath, GroundTruthState
 
 
 def gps_to_ground_truth(**kwargs):
-
+    delay = kwargs["gps_offset_delay"]
     SensorLat = 51.98880548
     SensorLon = 4.390007015
-    start_time = kwargs["start_time"] + timedelta(seconds=0)
+    start_time = kwargs["start_time"] - timedelta(seconds=delay)
     i=0
     wgs_84 = CRS("EPSG:4326")
     sensor_position = CRS(
@@ -28,12 +28,13 @@ def gps_to_ground_truth(**kwargs):
     path = kwargs["filepath"]
     df = pd.read_csv(path)
 
-    delay = 40
-    delay_indices = int(delay*10)
-    df = df.iloc[delay_indices:]
+    delay = kwargs["gps_offset_delay"]
+    # if delay > 0:
+    #     delay_indices = int(delay*10)
+    #     df = df.iloc[delay_indices:]
 
     timelength = timedelta(milliseconds=int(df.iloc[-1, 0] - df.iloc[0,0]))
-    print(timelength)
+    # print(f"length of gps recording {timelength}")
     ground_truth = GroundTruthPath()
     ts = []
     for _, row in df.iterrows():

@@ -58,7 +58,8 @@ def ospa_stonesoup(track, ground_truth, c=10, p=1):
 
     ospa_times = [metric.timestamp for metric in ospa_metric.value]
     ospa_values = [metric.value for metric in ospa_metric.value]
-
+    corrected_ospa_values = [value for value in ospa_values if value < 10]
+    # print(corrected_ospa_values)
     # Convert timestamps to relative execution seconds for a clean X-axis scale
 
     # Plot using matplotlib
@@ -72,6 +73,12 @@ def ospa_stonesoup(track, ground_truth, c=10, p=1):
         linestyle="--",
         label=f"Mean OSPA ({np.mean(ospa_values):.2f}m)",
     )
+    plt.axhline(
+        np.mean(corrected_ospa_values),
+        color="blue",
+        linestyle="--",
+        label=f"Corrected OSPA ({np.mean(corrected_ospa_values):.2f}m)",
+    )
 
     plt.title("OSPA Metric Evaluation Over Time", fontsize=11, fontweight="bold")
     plt.xlabel("Simulation Time (seconds)")
@@ -79,6 +86,7 @@ def ospa_stonesoup(track, ground_truth, c=10, p=1):
     plt.grid(True, linestyle=":", alpha=0.6)
     plt.legend()
     plt.show()
+    return ospa_values, corrected_ospa_values
 
 
 def mean_ospa_stonesoup(track, ground_truth, c=10, p=1):
@@ -96,4 +104,6 @@ def mean_ospa_stonesoup(track, ground_truth, c=10, p=1):
     ospa_metric = metrics["OSPA distances"]
 
     ospa_values = [metric.value for metric in ospa_metric.value]
+    corrected_ospa_values = [value<10 for value in ospa_values]
+
     return np.mean(ospa_values)

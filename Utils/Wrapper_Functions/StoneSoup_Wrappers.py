@@ -79,15 +79,15 @@ class UCMKFUpdater(Updater):
             np.array(
                 [
                     [
-                        (-z_y) / (z_x**2 + z_y**2),
+                        (-z_y) / (1e-10 + z_x**2 + z_y**2),
                         0,
-                        z_x / (z_x**2 + z_y**2),
+                        z_x / (1e-10 +z_x**2 + z_y**2),
                         0,
                     ],
                     [
-                        z_x / np.sqrt(z_x**2 + z_y**2),
+                        z_x / np.sqrt(1e-10 +z_x**2 + z_y**2),
                         0,
-                        z_y / np.sqrt(z_x**2 + z_y**2),
+                        z_y / np.sqrt(1e-10 +z_x**2 + z_y**2),
                         0,
                     ],
                 ]
@@ -96,18 +96,18 @@ class UCMKFUpdater(Updater):
             else np.array(
                 [
                     [
-                        (-z_y) / (z_x**2 + z_y**2),
+                        (-z_y) / (1e-10 +z_x**2 + z_y**2),
                         0,
                         0,
-                        z_x / (z_x**2 + z_y**2),
+                        z_x / (1e-10 +z_x**2 + z_y**2),
                         0,
                         0,
                     ],
                     [
-                        z_x / np.sqrt(z_x**2 + z_y**2),
+                        z_x / np.sqrt(1e-10 +z_x**2 + z_y**2),
                         0,
                         0,
-                        z_y / np.sqrt(z_x**2 + z_y**2),
+                        z_y / np.sqrt(1e-10 +z_x**2 + z_y**2),
                         0,
                         0,
                     ],
