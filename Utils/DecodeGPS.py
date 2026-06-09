@@ -29,12 +29,9 @@ def gps_to_ground_truth(**kwargs):
     df = pd.read_csv(path)
 
     delay = kwargs["gps_offset_delay"]
-    # if delay > 0:
-    #     delay_indices = int(delay*10)
-    #     df = df.iloc[delay_indices:]
 
     timelength = timedelta(milliseconds=int(df.iloc[-1, 0] - df.iloc[0,0]))
-    # print(f"length of gps recording {timelength}")
+
     ground_truth = GroundTruthPath()
     ts = []
     for _, row in df.iterrows():
@@ -49,7 +46,7 @@ def gps_to_ground_truth(**kwargs):
         x, y = gps_to_sensor.transform(lon, lat)
 
         # offset angle
-        angle_offset = np.deg2rad(70)
+        angle_offset = np.deg2rad(72.6)
         x_offset = 0
         y_offset = 0
         x_final = x * np.cos(angle_offset) - y * np.sin(angle_offset) + x_offset

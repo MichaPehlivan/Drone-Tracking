@@ -32,7 +32,7 @@ from stonesoup.plotter import Plotter
 
 def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association_distance = 4 ,deletion_covariance = 15 ,initiation_points = 15, gps_offset_delay=0):
 
-    print("Starting Runtime")
+    # print("Starting Runtime")
 
     # variances in measurement dimensions.
     range_sigma = np.sqrt(0.444)
@@ -302,50 +302,67 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
     end = timer()
 
     duration = end - start
-    print(f"runtime: {duration} s")
+    # print(f"runtime: {duration} s")
     interpolated_ground_truth = interpolate_ground_truth(ground_truth[0], timesteps, model)
 
     # Evaluate using the ALIGNED ground truth
     OSPA_values, OSPA_corrected_values = ospa_stonesoup(all_tracks, interpolated_ground_truth)
 
 
-    # Plotting
-    plotter = Plotter()
-    plotter.plot_ground_truths(ground_truth, [0, 2] if model == "cv" else [0, 3])
-    plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3])
-    plotter.plot_measurements(
-        [det for det_set in detections for det in det_set],
-        [0, 2] if model == "cv" else [0, 3],
-        measurement_model=measurement_model,
-    )
 
-    ax = plt.gca()
-    x_min, x_max = ax.get_xlim()
-    y_min, y_max = ax.get_ylim()
-    data_min = min(x_min, y_min)
-    data_max = max(x_max, y_max)
-    # ax.set_xlim(data_min, data_max)
-    # ax.set_ylim(data_min, data_max)
-    ax.set_xlim(-10, 50)
-    ax.set_ylim(-30, 30)
-    ax.set_aspect("equal", adjustable="box")
-
-    plt.grid()
-    plotter.fig.show()
-    plt.show()
+    # plotter = Plotter()
+    # plotter.plot_ground_truths(ground_truth, [0, 2] if model == "cv" else [0, 3])
+    # plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3])
+    # plotter.plot_measurements(
+    #     [det for det_set in detections for det in det_set],
+    #     [0, 2] if model == "cv" else [0, 3],
+    #     measurement_model=measurement_model,
+    # )
+    #
+    # ax = plt.gca()
+    # x_min, x_max = ax.get_xlim()
+    # y_min, y_max = ax.get_ylim()
+    # data_min = min(x_min, y_min)
+    # data_max = max(x_max, y_max)
+    # # ax.set_xlim(data_min, data_max)
+    # # ax.set_ylim(data_min, data_max)
+    # ax.set_xlim(-10, 50)
+    # ax.set_ylim(-30, 30)
+    # ax.set_aspect("equal", adjustable="box")
+    #
+    # plt.grid()
+    # plotter.fig.show()
+    # plt.show()
     from stonesoup.plotter import AnimatedPlotterly
 
-    plotter = AnimatedPlotterly(timesteps, tail_length=0.2)
+    plotter = AnimatedPlotterly(timesteps, tail_length=0.7)
     plotter.fig.update_layout(
         yaxis=dict(
             scaleanchor="x",
             scaleratio=1
         )
     )
+    from stonesoup.sensor.radar.radar import RadarBearingRange
+    from stonesoup.types.array import StateVector
+
+    plotter.fig.update_layout(
+        shapes=[
+            dict(
+                type="rect",
+                xref="x", yref="y",
+                x0=-0.2, y0=-0.2, x1=0.2, y1=0.2,  # Draws a small circle around (0,0)
+                fillcolor="blue",
+                line=dict(color="black", width=0),
+            )
+        ]
+    )
+
     plotter.fig.update_layout(width=700, height=700)
-    plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=False)
-    plotter.plot_ground_truths(ground_truth, mapping=[0, 2] if model == "cv" else [0, 3])
     plotter.plot_measurements(detections, [0, 2] if model == "cv" else [0, 3])
+    plotter.plot_ground_truths(ground_truth, mapping=[0, 2] if model == "cv" else [0, 3])
+    plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=False)
+
+
     plotter.fig.show()
 
     return duration, OSPA_values, OSPA_corrected_values

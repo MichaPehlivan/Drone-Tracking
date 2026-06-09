@@ -8,30 +8,11 @@ from pipeline import run_algorithm
 
 if __name__ == '__main__':
 
-    runtime = []
-
-    # for i in range(50):
-    #
-    #     (runtime_i, ospa_values, ospa_corrected_values) = run_algorithm(
-    #
-    #         filter = "ucmkf" , # "ucmkf", "ekf", or "ukf"
-    #         model = "ca",  # "cv" or "ca"
-    #         ndoppler = 500,
-    #         recording_path = "Data/sidetoside/detections_mvdr_argmax_10db_500.csv",
-    #         gps_path= "Data/sidetoside/flight2-sidetoside-GPS.csv",
-    #         association_distance = 4,
-    #         deletion_covariance = 15,
-    #         initiation_points = 15,
-    #         gps_offset_delay =  40 #offset for the recordings
-    #     )
-    #     runtime.append(runtime_i)
-    #
-    # print(f"final runtime over 50 iterations: {np.mean(runtime):.4f}")
 
     #sidetoside
     (runtime_i, ospa_values, ospa_corrected_values) = run_algorithm(
 
-            filter = "ucmkf" , # "ucmkf", "ekf", or "ukf"
+            filter = "ukf" , # "ucmkf", "ekf", or "ukf"
             model = "ca",  # "cv" or "ca"
             ndoppler = 500,
             recording_path = "Data/sidetoside/detections_mvdr_argmax_10db_500.csv",
