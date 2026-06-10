@@ -19,19 +19,22 @@ if __name__ == "__main__":
     gps_path = "Data/sidetoside/flight2-sidetoside-GPS.csv"
 
     # select simulation or real data
-    simulation = True
+    simulation = False
     plot = True
 
-    num_datapoints = 300
+    num_datapoints = int(30 / dt)
     x_initial = 50
     y_initial = 50
 
     var_r = 0.444
     var_phi = 0.000720
 
-    association_distance = 4
-    deletion_covariance = 20
-    initiation_points = 10
+    association_distance_sim = 15
+    deletion_covariance_sim = 40
+    initiation_points_sim = 10
+    association_distance = 5
+    deletion_covariance = 15
+    initiation_points = 15
     gps_offset_delay = 40  # offset for the recordings
 
     drones_params = [
@@ -54,6 +57,7 @@ if __name__ == "__main__":
     ]
 
     # sidetoside
+    print(f"running on {"simulated" if simulation else "real"} data")
     for filter in ["ucmkf", "ekf", "ukf"]:
         ospa_times_cv = []
         ospa_times_ca = []
@@ -83,9 +87,9 @@ if __name__ == "__main__":
                 recording_path,
                 gps_path,
                 gps_offset_delay,
-                association_distance,
-                deletion_covariance,
-                initiation_points,
+                association_distance_sim if simulation else association_distance,
+                deletion_covariance_sim if simulation else deletion_covariance,
+                initiation_points_sim if simulation else initiation_points,
                 simulation=simulation,
             )
             runtime_i, ospa_times, ospa_values, ospa_corrected_values = run_algorithm(

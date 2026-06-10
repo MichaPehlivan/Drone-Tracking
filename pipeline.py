@@ -238,9 +238,9 @@ def generate_config(
     Q = Q_generator(dt)
 
     x0 = (
-        np.array([[1], [0], [1], [0]])
+        np.array([[1], [5], [1], [5]])
         if model == "cv"
-        else np.array([[1], [0], [0], [1], [0], [0]])
+        else np.array([[1], [5], [0], [1], [5], [0]])
     )
 
     # Starting error covariance (should be on the higher side to quickly settle in towards the correct values. i.e high uncertainty to start with :))
