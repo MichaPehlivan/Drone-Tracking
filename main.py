@@ -142,18 +142,19 @@ if __name__ == "__main__":
             linestyle="--",
             label=f"Mean OSPA CA ({np.mean(ospa_values_ca):.3f}m)",
         )
-        plt.axhline(
-            np.mean(ospa_corrected_values_cv),
-            color="blue",
-            linestyle="--",
-            label=f"Corrected OSPA CV ({np.mean(ospa_corrected_values_cv):.3f}m)",
-        )
-        plt.axhline(
-            np.mean(ospa_corrected_values_ca),
-            color="green",
-            linestyle="--",
-            label=f"Corrected OSPA CA ({np.mean(ospa_corrected_values_ca):.3f}m)",
-        )
+        if not simulation:
+            plt.axhline(
+                np.mean(ospa_corrected_values_cv),
+                color="blue",
+                linestyle="--",
+                label=f"Corrected OSPA CV ({np.mean(ospa_corrected_values_cv):.3f}m)",
+            )
+            plt.axhline(
+                np.mean(ospa_corrected_values_ca),
+                color="green",
+                linestyle="--",
+                label=f"Corrected OSPA CA ({np.mean(ospa_corrected_values_ca):.3f}m)",
+            )
 
         plt.title(f"OSPA Over Time {filter}", fontsize=11, fontweight="bold")
         plt.xlabel("Time [s]")
