@@ -20,36 +20,36 @@ if __name__ == "__main__":
 
     # select simulation or real data
     simulation = True
-    plot = False
+    plot = True
 
-    x_initial = 5
-    y_initial = 5
-    num_datapoints = 100
+    num_datapoints = 300
+    x_initial = 50
+    y_initial = 50
 
     var_r = 0.444
     var_phi = 0.000720
 
-    association_distance = 5
-    deletion_covariance = 15
-    initiation_points = 15
+    association_distance = 4
+    deletion_covariance = 20
+    initiation_points = 10
     gps_offset_delay = 40  # offset for the recordings
 
     drones_params = [
-        {"x0": x_initial, "y0": y_initial, "v_x": 5.0, "v_y": 5.0},
-        {"x0": x_initial + 100, "y0": y_initial, "v_x": -5, "v_y": 5},
+        {"x0": x_initial, "y0": y_initial, "v_x": 5, "v_y": 5},
+        {"x0": x_initial - 5, "y0": y_initial - 5, "v_x": -5, "v_y": 5},
         {
-            "x0": x_initial + 100,
-            "y0": y_initial + 70,
-            "v_x": -5,
-            "v_y": 1,
+            "x0": x_initial + 20,
+            "y0": y_initial + 20,
+            "v_x": 3,
+            "v_y": -4,
             "delay_steps": 10,
         },
         {
-            "x0": x_initial - 100,
-            "y0": y_initial - 70,
-            "v_x": -5,
-            "v_y": 1,
-            "delay_steps": 10,
+            "x0": x_initial + 20,
+            "y0": y_initial - 20,
+            "v_x": 3,
+            "v_y": 5,
+            "delay_steps": 30,
         },
     ]
 
@@ -132,26 +132,26 @@ if __name__ == "__main__":
         )
         plt.axhline(
             np.mean(ospa_values_cv),
-            color="gray",
+            color="blue",
             linestyle="--",
             label=f"Mean OSPA CV ({np.mean(ospa_values_cv):.3f}m)",
         )
         plt.axhline(
             np.mean(ospa_values_ca),
-            color="black",
+            color="green",
             linestyle="--",
             label=f"Mean OSPA CA ({np.mean(ospa_values_ca):.3f}m)",
         )
         if not simulation:
             plt.axhline(
                 np.mean(ospa_corrected_values_cv),
-                color="blue",
+                color="yellow",
                 linestyle="--",
                 label=f"Corrected OSPA CV ({np.mean(ospa_corrected_values_cv):.3f}m)",
             )
             plt.axhline(
                 np.mean(ospa_corrected_values_ca),
-                color="green",
+                color="black",
                 linestyle="--",
                 label=f"Corrected OSPA CA ({np.mean(ospa_corrected_values_ca):.3f}m)",
             )

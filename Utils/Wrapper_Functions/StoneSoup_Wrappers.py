@@ -419,8 +419,8 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
                     clutter_chance = 0.2
                     if np.random.uniform(0, 1) < clutter_chance:
 
-                        rand_x = np.random.uniform(-30, 150)
-                        rand_y = np.random.uniform(-30, 150)
+                        rand_x = np.random.uniform(-300, 300)
+                        rand_y = np.random.uniform(-300, 300)
                         rand_phi = np.arctan2(rand_y, rand_x)
                         rand_R = np.sqrt(rand_x**2 + rand_y**2)
                         det = Detection(

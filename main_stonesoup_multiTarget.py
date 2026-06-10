@@ -43,11 +43,12 @@ from Utils.Wrapper_Functions.StoneSoup_Wrappers import (
 )
 
 # Initialize values
-dt = 0.4
-x_initial = 5
-y_initial = 5
+ndoppler = 500
+dt = 210e-6 * ndoppler
+x_initial = 50
+y_initial = 50
 
-num_datapoints = 100
+num_datapoints = 300
 
 # Initialize the functions and matrices for the Kalman filter.
 
@@ -133,6 +134,7 @@ shared_config = {
     "sim_function": simulateRandomAccelTrackPolar,
     "start_time": start_time,
     "measurement_model": measurement_model,
+    "model": "ca",
     "num_datapoints": num_datapoints,
     "dt": dt,
     "sigma_r": range_sigma,
@@ -141,29 +143,22 @@ shared_config = {
 }
 
 drones_params = [
-    {"x0": x_initial, "y0": y_initial, "v_x": 5.0, "v_y": 5.0},
-    {"x0": x_initial + 100, "y0": y_initial, "v_x": -5, "v_y": 5},
+    {"x0": x_initial, "y0": y_initial, "v_x": 5, "v_y": 5},
+    {"x0": x_initial - 5, "y0": y_initial - 5, "v_x": -5, "v_y": 5},
     {
-        "x0": x_initial + 100,
-        "y0": y_initial + 70,
-        "v_x": -5,
-        "v_y": 1,
+        "x0": x_initial + 20,
+        "y0": y_initial + 20,
+        "v_x": 3,
+        "v_y": -4,
         "delay_steps": 10,
     },
     {
-        "x0": x_initial + 150,
-        "y0": y_initial + 70,
-        "v_x": 1,
-        "v_y": 4,
-        "delay_steps": 50,
+        "x0": x_initial + 20,
+        "y0": y_initial - 20,
+        "v_x": 3,
+        "v_y": 5,
+        "delay_steps": 30,
     },
-    # {
-    #     "x0": x_initial + 30,
-    #     "y0": y_initial + 90,
-    #     "v_x": 0,
-    #     "v_y": -4,
-    #     "delay_steps": 30,
-    # },
 ]
 
 detections, ground_truths = SimulatorPolarMultitarget_stonesoup(
