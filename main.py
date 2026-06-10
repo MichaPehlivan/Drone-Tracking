@@ -19,7 +19,8 @@ if __name__ == "__main__":
     gps_path = "Data/sidetoside/flight2-sidetoside-GPS.csv"
 
     # select simulation or real data
-    simulation = False
+    simulation = True
+    plot = False
 
     x_initial = 5
     y_initial = 5
@@ -98,6 +99,7 @@ if __name__ == "__main__":
                 initiator,
                 ground_truth,
                 simulation=simulation,
+                plot=plot,
             )
 
             if model == "cv":

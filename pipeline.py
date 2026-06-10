@@ -357,6 +357,7 @@ def run_algorithm(
     initiator,
     ground_truth,
     simulation=False,
+    plot=True,
 ):
     tracks, all_tracks = set(), set()
     timesteps = []
@@ -420,38 +421,40 @@ def run_algorithm(
     # plt.grid()
     # plotter.fig.show()
     # plt.show()
-    from stonesoup.plotter import AnimatedPlotterly
 
-    plotter = AnimatedPlotterly(timesteps, tail_length=0.7)
-    plotter.fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
-    from stonesoup.sensor.radar.radar import RadarBearingRange
-    from stonesoup.types.array import StateVector
+    if plot:
+        from stonesoup.plotter import AnimatedPlotterly
 
-    plotter.fig.update_layout(
-        shapes=[
-            dict(
-                type="rect",
-                xref="x",
-                yref="y",
-                x0=-0.2,
-                y0=-0.2,
-                x1=0.2,
-                y1=0.2,  # Draws a small circle around (0,0)
-                fillcolor="blue",
-                line=dict(color="black", width=0),
-            )
-        ]
-    )
+        plotter = AnimatedPlotterly(timesteps, tail_length=0.7)
+        plotter.fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
+        from stonesoup.sensor.radar.radar import RadarBearingRange
+        from stonesoup.types.array import StateVector
 
-    plotter.fig.update_layout(width=700, height=700)
-    plotter.plot_measurements(detections, [0, 2] if model == "cv" else [0, 3])
-    plotter.plot_ground_truths(
-        ground_truth, mapping=[0, 2] if model == "cv" else [0, 3]
-    )
-    plotter.plot_tracks(
-        all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=False
-    )
+        plotter.fig.update_layout(
+            shapes=[
+                dict(
+                    type="rect",
+                    xref="x",
+                    yref="y",
+                    x0=-0.2,
+                    y0=-0.2,
+                    x1=0.2,
+                    y1=0.2,  # Draws a small circle around (0,0)
+                    fillcolor="blue",
+                    line=dict(color="black", width=0),
+                )
+            ]
+        )
 
-    plotter.fig.show()
+        plotter.fig.update_layout(width=700, height=700)
+        plotter.plot_measurements(detections, [0, 2] if model == "cv" else [0, 3])
+        plotter.plot_ground_truths(
+            ground_truth, mapping=[0, 2] if model == "cv" else [0, 3]
+        )
+        plotter.plot_tracks(
+            all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=False
+        )
+
+        plotter.fig.show()
 
     return duration, OSPA_times, OSPA_values, OSPA_corrected_values
