@@ -3,10 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from timeit import default_timer as timer
+
 # Internal Packages
 
 from Evaluation_Metrics import ospa_stonesoup
 from Kalman_Filters import UCMKalmanFilter, ExtendedKalmanFilter, UnscentedKalmanFilter
+from Track_Simulation.TrackSimulator import simulateRandomAccelTrackPolar
 from Utils.DecodeGPS import gps_to_ground_truth, interpolate_ground_truth
 from Utils.Wrapper_Functions import (
     UCMKFPredictor,
@@ -28,15 +30,82 @@ from stonesoup.measures import Mahalanobis
 from stonesoup.hypothesiser.distance import DistanceHypothesiser
 from stonesoup.plotter import Plotter
 
+from Utils.Wrapper_Functions.StoneSoup_Wrappers import (
+    SimulatorPolarMultitarget_stonesoup,
+)
 
 
-def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association_distance = 4 ,deletion_covariance = 15 ,initiation_points = 15, gps_offset_delay=0):
+def get_detections(
+    model,
+    measurement_model,
+    var_r,
+    var_phi,
+    start_time,
+    dt,
+    recording_path,
+    gps_path,
+    gps_offset_delay,
+    drones_params,
+    num_datapoints,
+    simulation=False,
+):
+    if simulation:
+        shared_config = {
+            "sim_function": simulateRandomAccelTrackPolar,
+            "start_time": start_time,
+            "measurement_model": measurement_model,
+            "model": model,
+            "num_datapoints": num_datapoints,
+            "dt": dt,
+            "sigma_r": np.sqrt(var_r),
+            "sigma_phi": np.sqrt(var_phi),
+            "add_clutter": True,
+        }
 
-    # print("Starting Runtime")
+        detections, ground_truth = SimulatorPolarMultitarget_stonesoup(
+            **shared_config, drone_configs=drones_params
+        )
 
+        return detections, ground_truth
+    else:
+        # Get the detections from Abdullahs group
+        detections = ReadDetections(
+            filepath=recording_path,
+            measurement_model=measurement_model,
+            dt=dt,
+            start_time=start_time,
+        )
+
+        ground_truth = gps_to_ground_truth(
+            filepath=gps_path,
+            model=model,
+            start_time=start_time,
+            gps_offset_delay=gps_offset_delay,
+        )
+
+        return detections, ground_truth
+
+
+def generate_config(
+    var_r,
+    var_phi,
+    start_time,
+    dt,
+    model,
+    filter,
+    drones_params,
+    num_datapoints,
+    recording_path,
+    gps_path,
+    gps_offset_delay=0,
+    association_distance=4,
+    deletion_covariance=15,
+    initiation_points=15,
+    simulation=False,
+):
     # variances in measurement dimensions.
-    range_sigma = np.sqrt(0.444)
-    azimuth_sigma = np.sqrt(0.000720)
+    range_sigma = np.sqrt(var_r)
+    azimuth_sigma = np.sqrt(var_phi)
 
     # Kalman Filter tuning
     UCMKF_Q = 1
@@ -47,10 +116,7 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
     UKF_Q = 1
     UKF_R = 1
     UKF_P0 = 1
-    alpha = 1
-
-    dt = 210e-6 * ndoppler
-
+    alpha = 0.1
 
     # Initialize the functions and matrices for the Kalman filter.
     F_generator = lambda dt: (
@@ -96,15 +162,15 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
         np.array(
             [
                 [
-                    (-x[2]) / (1e-9+x[0] ** 2 + x[2] ** 2),
+                    (-x[2]) / (1e-9 + x[0] ** 2 + x[2] ** 2),
                     0,
-                    x[0] / (1e-9+x[0] ** 2 + x[2] ** 2 ),
+                    x[0] / (1e-9 + x[0] ** 2 + x[2] ** 2),
                     0,
                 ],
                 [
-                    x[0] / np.sqrt(1e-9+x[0] ** 2 + x[2] ** 2),
+                    x[0] / np.sqrt(1e-9 + x[0] ** 2 + x[2] ** 2),
                     0,
-                    x[2] / np.sqrt(1e-9+x[0] ** 2 + x[2] ** 2),
+                    x[2] / np.sqrt(1e-9 + x[0] ** 2 + x[2] ** 2),
                     0,
                 ],
             ]
@@ -155,11 +221,17 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
     )
     Q_generator = lambda dt: (
         np.block(
-            [[Q1D_generator(dt), np.zeros((2, 2))], [np.zeros((2, 2)), Q1D_generator(dt)]]
+            [
+                [Q1D_generator(dt), np.zeros((2, 2))],
+                [np.zeros((2, 2)), Q1D_generator(dt)],
+            ]
         )
         if model == "cv"
         else np.block(
-            [[Q1D_generator(dt), np.zeros((3, 3))], [np.zeros((3, 3)), Q1D_generator(dt)]]
+            [
+                [Q1D_generator(dt), np.zeros((3, 3))],
+                [np.zeros((3, 3)), Q1D_generator(dt)],
+            ]
         )
     )
 
@@ -174,10 +246,6 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
     # Starting error covariance (should be on the higher side to quickly settle in towards the correct values. i.e high uncertainty to start with :))
     P0 = np.eye(4) if model == "cv" else np.eye(6)
 
-    # convert to variance.
-    var_r = 0.444 #Experimentally obtained values
-    var_phi =  0.000720 #Also experimental (Rad)
-
     # Initialize measurement error matrix.
     R = np.array([[var_phi, 0], [0, var_r]])
 
@@ -188,22 +256,19 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
         else CartesianToBearingRange(ndim_state=6, mapping=(0, 3), noise_covar=R)
     )
 
-    # start the clock for easy timestamp management
-    start_time = datetime(2026, 5, 28, 8, 10, 18, 33)
-
-    # Get the detections from Abdullahs group
-    detections = ReadDetections(
-        filepath=recording_path,
-        measurement_model=measurement_model,
-        dt=dt,
-        start_time=start_time,
-    )
-    time_duration_recording_s = timedelta(seconds=dt) * len(detections)
-
-
-
-    ground_truth = gps_to_ground_truth(
-        filepath=gps_path, model=model, start_time=start_time, gps_offset_delay=gps_offset_delay
+    detections, ground_truth = get_detections(
+        model,
+        measurement_model,
+        var_r,
+        var_phi,
+        start_time,
+        dt,
+        recording_path,
+        gps_path,
+        gps_offset_delay,
+        drones_params,
+        num_datapoints,
+        simulation=simulation,
     )
 
     # ___Initialize the filter____
@@ -254,7 +319,6 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
         timestamp=start_time,
     )
 
-
     hypothesiser = DistanceHypothesiser(
         predictor, updater, measure=Mahalanobis(), missed_distance=association_distance
     )
@@ -271,10 +335,31 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
         min_points=initiation_points,
     )
 
+    return (
+        detections,
+        dt,
+        data_associator,
+        updater,
+        deleter,
+        initiator,
+        ground_truth,
+    )
 
+
+def run_algorithm(
+    model,
+    detections,
+    start_time,
+    dt,
+    data_associator,
+    updater,
+    deleter,
+    initiator,
+    ground_truth,
+    simulation=False,
+):
     tracks, all_tracks = set(), set()
     timesteps = []
-    previous_timestamp = None
     start = timer()
     for n, measurements in enumerate(detections):
         timestamp = start_time + timedelta(seconds=dt * n)
@@ -303,12 +388,14 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
 
     duration = end - start
     # print(f"runtime: {duration} s")
-    interpolated_ground_truth = interpolate_ground_truth(ground_truth[0], timesteps, model)
+    interpolated_ground_truth = interpolate_ground_truth(
+        ground_truth[0], timesteps, model
+    )
 
     # Evaluate using the ALIGNED ground truth
-    OSPA_values, OSPA_corrected_values = ospa_stonesoup(all_tracks, interpolated_ground_truth)
-
-
+    OSPA_times, OSPA_values, OSPA_corrected_values = ospa_stonesoup(
+        all_tracks, ground_truth if simulation else interpolated_ground_truth
+    )
 
     # plotter = Plotter()
     # plotter.plot_ground_truths(ground_truth, [0, 2] if model == "cv" else [0, 3])
@@ -336,12 +423,7 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
     from stonesoup.plotter import AnimatedPlotterly
 
     plotter = AnimatedPlotterly(timesteps, tail_length=0.7)
-    plotter.fig.update_layout(
-        yaxis=dict(
-            scaleanchor="x",
-            scaleratio=1
-        )
-    )
+    plotter.fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
     from stonesoup.sensor.radar.radar import RadarBearingRange
     from stonesoup.types.array import StateVector
 
@@ -349,8 +431,12 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
         shapes=[
             dict(
                 type="rect",
-                xref="x", yref="y",
-                x0=-0.2, y0=-0.2, x1=0.2, y1=0.2,  # Draws a small circle around (0,0)
+                xref="x",
+                yref="y",
+                x0=-0.2,
+                y0=-0.2,
+                x1=0.2,
+                y1=0.2,  # Draws a small circle around (0,0)
                 fillcolor="blue",
                 line=dict(color="black", width=0),
             )
@@ -359,10 +445,13 @@ def run_algorithm(filter, model, ndoppler, recording_path, gps_path, association
 
     plotter.fig.update_layout(width=700, height=700)
     plotter.plot_measurements(detections, [0, 2] if model == "cv" else [0, 3])
-    plotter.plot_ground_truths(ground_truth, mapping=[0, 2] if model == "cv" else [0, 3])
-    plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=False)
-
+    plotter.plot_ground_truths(
+        ground_truth, mapping=[0, 2] if model == "cv" else [0, 3]
+    )
+    plotter.plot_tracks(
+        all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=False
+    )
 
     plotter.fig.show()
 
-    return duration, OSPA_values, OSPA_corrected_values
+    return duration, OSPA_times, OSPA_values, OSPA_corrected_values

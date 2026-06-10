@@ -81,13 +81,13 @@ class UCMKFUpdater(Updater):
                     [
                         (-z_y) / (1e-10 + z_x**2 + z_y**2),
                         0,
-                        z_x / (1e-10 +z_x**2 + z_y**2),
+                        z_x / (1e-10 + z_x**2 + z_y**2),
                         0,
                     ],
                     [
-                        z_x / np.sqrt(1e-10 +z_x**2 + z_y**2),
+                        z_x / np.sqrt(1e-10 + z_x**2 + z_y**2),
                         0,
-                        z_y / np.sqrt(1e-10 +z_x**2 + z_y**2),
+                        z_y / np.sqrt(1e-10 + z_x**2 + z_y**2),
                         0,
                     ],
                 ]
@@ -96,18 +96,18 @@ class UCMKFUpdater(Updater):
             else np.array(
                 [
                     [
-                        (-z_y) / (1e-10 +z_x**2 + z_y**2),
+                        (-z_y) / (1e-10 + z_x**2 + z_y**2),
                         0,
                         0,
-                        z_x / (1e-10 +z_x**2 + z_y**2),
+                        z_x / (1e-10 + z_x**2 + z_y**2),
                         0,
                         0,
                     ],
                     [
-                        z_x / np.sqrt(1e-10 +z_x**2 + z_y**2),
+                        z_x / np.sqrt(1e-10 + z_x**2 + z_y**2),
                         0,
                         0,
-                        z_y / np.sqrt(1e-10 +z_x**2 + z_y**2),
+                        z_y / np.sqrt(1e-10 + z_x**2 + z_y**2),
                         0,
                         0,
                     ],
@@ -300,6 +300,7 @@ def SimulatorPolar_stonesoup(**kwargs):
 
     return all_detections, ground_truth
 
+
 """
 input:
     add_clutter: standard:False whether to add clutter detections
@@ -361,16 +362,17 @@ output:
     )
 
 """
+
+
 def SimulatorPolarMultitarget_stonesoup(**kwargs):
     add_clutter = kwargs.pop("add_clutter", False)
     start_time = kwargs.pop("start_time")
     sim_function = kwargs.pop("sim_function")
     measurement_model = kwargs.pop("measurement_model")
+    model = kwargs.pop("model")
     dt = kwargs.get("dt")
 
-    drone_configs = kwargs.pop(
-        "drone_configs", [{}, {}]
-    )
+    drone_configs = kwargs.pop("drone_configs", [{}, {}])
     measurements_list = []
     true_tracks_list = []
     delays_list = []
@@ -432,7 +434,11 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
                 y_true = track[1, local_i]
 
                 truth_state = State(
-                    state_vector=StateVector([x_true, 0, 0, y_true, 0, 0]),
+                    state_vector=(
+                        StateVector([x_true, 0, y_true, 0])
+                        if model == "cv"
+                        else StateVector([x_true, 0, 0, y_true, 0, 0])
+                    ),
                     timestamp=timestamp,
                 )
                 ground_truths[drone].append(truth_state)
@@ -440,4 +446,3 @@ def SimulatorPolarMultitarget_stonesoup(**kwargs):
         all_detections.append(time_step_detections)
 
     return all_detections, ground_truths
-

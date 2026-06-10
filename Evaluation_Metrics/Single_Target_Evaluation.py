@@ -60,32 +60,7 @@ def ospa_stonesoup(track, ground_truth, c=10, p=1):
     ospa_values = [metric.value for metric in ospa_metric.value]
     corrected_ospa_values = [value for value in ospa_values if value < 10]
 
-
-    plt.figure(figsize=(8, 4))
-    plt.plot(
-        ospa_times, ospa_values, color="crimson", linewidth=2, label="OSPA Distance"
-    )
-    plt.axhline(
-        np.mean(ospa_values),
-        color="gray",
-        linestyle="--",
-        label=f"Mean OSPA ({np.mean(ospa_values):.3f}m)",
-    )
-    plt.axhline(
-        np.mean(corrected_ospa_values),
-        color="blue",
-        linestyle="--",
-        label=f"Corrected OSPA ({np.mean(corrected_ospa_values):.3f}m)",
-    )
-
-    plt.title("OSPA Over Time", fontsize=11, fontweight="bold")
-    plt.xlabel("Time [s]")
-    plt.ylabel("OSPA [m]")
-    plt.grid(True, linestyle=":", alpha=0.6)
-    plt.legend()
-    plt.show()
-
-    return ospa_values, corrected_ospa_values
+    return ospa_times, ospa_values, corrected_ospa_values
 
 
 def mean_ospa_stonesoup(track, ground_truth, c=10, p=1):
@@ -103,6 +78,6 @@ def mean_ospa_stonesoup(track, ground_truth, c=10, p=1):
     ospa_metric = metrics["OSPA distances"]
 
     ospa_values = [metric.value for metric in ospa_metric.value]
-    corrected_ospa_values = [value<10 for value in ospa_values]
+    corrected_ospa_values = [value < 10 for value in ospa_values]
 
     return np.mean(ospa_values)
