@@ -129,10 +129,10 @@ P0 = 1.0 * np.eye(6)
 # )
 
 # Another with low sigma
-range_sigma = 1
-azimuth_sigma = np.deg2rad(3)
-var_r = range_sigma**2
-var_phi = azimuth_sigma**2
+var_r = 0.444
+var_phi = 0.000720
+range_sigma = np.sqrt(var_r)
+azimuth_sigma = np.sqrt(var_phi)
 R = 1.0 * np.array([[var_phi, 0], [0, var_r]])
 
 measurements, trueTrack = simulateRandomAccelTrackPolar(
@@ -157,15 +157,15 @@ measurements, trueTrack = simulateRandomAccelTrackPolar(
 # )
 
 # tuning
-Q_UCMKF = 0.5651266374815751 * Q
-P0_UCMKF = 0.5326018875626138 * P0
-Q_EKF = 4.759747414526448 * Q
-R_EKF = 4.15905619206011 * R
-P0_EKF = 0.8539349359398827 * P0
-Q_UKF = 0.005917359871277248 * Q
-R_UKF = 0.01368247610843965 * R
-P0_UKF = 0.019883725415176096 * P0
-alpha = 0.5615697188642643
+Q_UCMKF = 1 * Q
+P0_UCMKF = 1 * P0
+Q_EKF = 1 * Q
+R_EKF = 1 * R
+P0_EKF = 1 * P0
+Q_UKF = 1 * Q
+R_UKF = 1 * R
+P0_UKF = 1 * P0
+alpha = 0.1
 
 # animate_track(trueTrack, dt=dt)
 RunJointKalman(

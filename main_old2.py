@@ -106,15 +106,15 @@ H = lambda x: (
     np.array(
         [
             [
-                (-x[2]) / (1e-9+x[0] ** 2 + x[2] ** 2),
+                (-x[2]) / (1e-9 + x[0] ** 2 + x[2] ** 2),
                 0,
-                x[0] / (1e-9+x[0] ** 2 + x[2] ** 2 ),
+                x[0] / (1e-9 + x[0] ** 2 + x[2] ** 2),
                 0,
             ],
             [
-                x[0] / np.sqrt(1e-9+x[0] ** 2 + x[2] ** 2),
+                x[0] / np.sqrt(1e-9 + x[0] ** 2 + x[2] ** 2),
                 0,
-                x[2] / np.sqrt(1e-9+x[0] ** 2 + x[2] ** 2),
+                x[2] / np.sqrt(1e-9 + x[0] ** 2 + x[2] ** 2),
                 0,
             ],
         ]
@@ -185,8 +185,8 @@ x0 = (
 P0 = np.eye(4) if model == "cv" else np.eye(6)
 
 # convert to variance.
-var_r = 0.444 #Experimentally obtained values
-var_phi =  0.000720 #Also experimental (Rad)
+var_r = 0.444  # Experimentally obtained values
+var_phi = 0.000720  # Also experimental (Rad)
 
 # Initialize measurement error matrix.
 R = np.array([[var_phi, 0], [0, var_r]])
@@ -215,7 +215,9 @@ print(time_duration_recording_s)
 
 
 ground_truth = gps_to_ground_truth(
-    filepath="Data/sidetoside/flight2-sidetoside-GPS.csv", model=model, start_time=start_time
+    filepath="Data/sidetoside/flight2-sidetoside-GPS.csv",
+    model=model,
+    start_time=start_time,
 )
 
 print("More initializing...")
@@ -348,12 +350,7 @@ plt.show()
 from stonesoup.plotter import AnimatedPlotterly
 
 plotter = AnimatedPlotterly(timesteps, tail_length=0.5)
-plotter.fig.update_layout(
-    yaxis=dict(
-        scaleanchor="x",
-        scaleratio=1
-    )
-)
+plotter.fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
 plotter.fig.update_layout(width=700, height=700)
 plotter.plot_tracks(all_tracks, [0, 2] if model == "cv" else [0, 3], uncertainty=False)
 plotter.plot_ground_truths(ground_truth, mapping=[0, 2] if model == "cv" else [0, 3])

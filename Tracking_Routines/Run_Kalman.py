@@ -239,16 +239,26 @@ def RunJointKalman(
     # Uses the plotting module to plot the x_history.
     if polar:
         # plotSimpleKalman(x_history, plot_measurements, trueTrack, average_ospa)
-        animate_TrackJointKalmanMeasurements(
-            trueTrack,
-            plot_measurements,
+        # animate_TrackJointKalmanMeasurements(
+        #     trueTrack,
+        #     plot_measurements,
+        #     x_history_ucmkf,
+        #     x_history_ekf,
+        #     x_history_ukf,
+        #     average_ospa_ucmkf,
+        #     average_ospa_ekf,
+        #     average_ospa_ukf,
+        #     dt=0.5,
+        # )
+        plotJointKalman(
             x_history_ucmkf,
             x_history_ekf,
             x_history_ukf,
+            plot_measurements,
+            trueTrack,
             average_ospa_ucmkf,
             average_ospa_ekf,
             average_ospa_ukf,
-            dt=0.5,
         )
 
     else:

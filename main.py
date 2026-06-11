@@ -19,7 +19,7 @@ if __name__ == "__main__":
     gps_path = "Data/sidetoside/flight2-sidetoside-GPS.csv"
 
     # select simulation or real data
-    simulation = False
+    simulation = True
     plot = True
 
     num_datapoints = int(30 / dt)
@@ -39,21 +39,21 @@ if __name__ == "__main__":
 
     drones_params = [
         {"x0": x_initial, "y0": y_initial, "v_x": 5, "v_y": 5},
-        {"x0": x_initial - 5, "y0": y_initial - 5, "v_x": -5, "v_y": 5},
-        {
-            "x0": x_initial + 20,
-            "y0": y_initial + 20,
-            "v_x": 3,
-            "v_y": -4,
-            "delay_steps": 10,
-        },
-        {
-            "x0": x_initial + 20,
-            "y0": y_initial - 20,
-            "v_x": 3,
-            "v_y": 5,
-            "delay_steps": 30,
-        },
+        # {"x0": x_initial - 5, "y0": y_initial - 5, "v_x": -5, "v_y": 5},
+        # {
+        #     "x0": x_initial + 20,
+        #     "y0": y_initial + 20,
+        #     "v_x": 3,
+        #     "v_y": -4,
+        #     "delay_steps": 10,
+        # },
+        # {
+        #     "x0": x_initial + 20,
+        #     "y0": y_initial - 20,
+        #     "v_x": 3,
+        #     "v_y": 5,
+        #     "delay_steps": 30,
+        # },
     ]
 
     # sidetoside

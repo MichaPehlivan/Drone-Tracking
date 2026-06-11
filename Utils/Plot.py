@@ -77,10 +77,12 @@ def plotSimpleKalman(x_history, measurements, trueTrack, ospa_distance):
 
 
 def plotJointKalman(
+    x_history_ucmkf,
     x_history_ekf,
     x_history_ukf,
     measurements,
     trueTrack,
+    ospa_distance_ucmkf,
     ospa_distance_ekf,
     ospa_distance_ukf,
 ):
@@ -99,12 +101,13 @@ def plotJointKalman(
         }
     )
 
+    textstr_ucmkf = f"Average OSPA UCMKF: {ospa_distance_ucmkf:.3f}"
     textstr_ekf = f"Average OSPA EKF: {ospa_distance_ekf:.3f}"
     textstr_ukf = f"Average OSPA UKF: {ospa_distance_ukf:.3f}"
 
     props = dict(boxstyle="round", facecolor="white", alpha=0.8, edgecolor="black")
 
-    fig, ax = plt.subplots(figsize=(12, 10))
+    fig, ax = plt.subplots(figsize=(7, 7))
 
     ax.text(
         0.95,
@@ -126,6 +129,16 @@ def plotJointKalman(
         horizontalalignment="right",
         bbox=props,
     )
+    ax.text(
+        0.95,
+        0.15,
+        textstr_ucmkf,
+        transform=ax.transAxes,
+        fontsize=13,
+        verticalalignment="bottom",
+        horizontalalignment="right",
+        bbox=props,
+    )
 
     ax.scatter(
         measurements[0, :],
@@ -136,6 +149,13 @@ def plotJointKalman(
         linewidths=1.5,
         label="Measurements",
         zorder=3,
+    )
+    ax.plot(
+        x_history_ucmkf[0, :],
+        x_history_ucmkf[1, :],
+        color="red",
+        label="UCMKF Track",
+        zorder=4,
     )
     ax.plot(
         x_history_ekf[0, :],
@@ -165,7 +185,9 @@ def plotJointKalman(
     ax.legend(loc="upper left", frameon=True, edgecolor="black")
     ax.minorticks_on()
 
-    ax.set_title("Kalman Filter Tracks")
+    ax.set_title(
+        "Tracking Performance: Truth vs. UCMKF vs. EKF vs. UKF vs. Measurements"
+    )
     ax.set_xlabel("X Position (m)")
     ax.set_ylabel("Y Position (m)")
 
