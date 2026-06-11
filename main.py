@@ -20,7 +20,11 @@ if __name__ == "__main__":
 
     # select simulation or real data
     simulation = True
-    plot = True
+    plot = False
+    plot_ospa = False
+
+    # simulation count
+    N = 100
 
     num_datapoints = int(30 / dt)
     x_initial = 50
@@ -39,21 +43,21 @@ if __name__ == "__main__":
 
     drones_params = [
         {"x0": x_initial, "y0": y_initial, "v_x": 5, "v_y": 5},
-        # {"x0": x_initial - 5, "y0": y_initial - 5, "v_x": -5, "v_y": 5},
-        # {
-        #     "x0": x_initial + 20,
-        #     "y0": y_initial + 20,
-        #     "v_x": 3,
-        #     "v_y": -4,
-        #     "delay_steps": 10,
-        # },
-        # {
-        #     "x0": x_initial + 20,
-        #     "y0": y_initial - 20,
-        #     "v_x": 3,
-        #     "v_y": 5,
-        #     "delay_steps": 30,
-        # },
+        {"x0": x_initial - 5, "y0": y_initial - 5, "v_x": -5, "v_y": 5},
+        {
+            "x0": x_initial + 20,
+            "y0": y_initial + 20,
+            "v_x": 3,
+            "v_y": -4,
+            "delay_steps": 10,
+        },
+        {
+            "x0": x_initial + 20,
+            "y0": y_initial - 20,
+            "v_x": 3,
+            "v_y": 5,
+            "delay_steps": 30,
+        },
     ]
 
     # sidetoside
@@ -66,106 +70,118 @@ if __name__ == "__main__":
         ospa_corrected_values_cv = []
         ospa_corrected_values_ca = []
         for model in ["cv", "ca"]:
-            print(f"running {filter} with {model} model")
-            (
-                detections,
-                dt,
-                data_associator,
-                updater,
-                deleter,
-                initiator,
-                ground_truth,
-            ) = generate_config(
-                var_r,
-                var_phi,
-                start_time,
-                dt,
-                model,
-                filter,
-                drones_params,
-                num_datapoints,
-                recording_path,
-                gps_path,
-                gps_offset_delay,
-                association_distance_sim if simulation else association_distance,
-                deletion_covariance_sim if simulation else deletion_covariance,
-                initiation_points_sim if simulation else initiation_points,
-                simulation=simulation,
-            )
-            runtime_i, ospa_times, ospa_values, ospa_corrected_values = run_algorithm(
-                model,
-                detections,
-                start_time,
-                dt,
-                data_associator,
-                updater,
-                deleter,
-                initiator,
-                ground_truth,
-                simulation=simulation,
-                plot=plot,
-            )
+            print(f"running {filter} with {model} model for {N} iterations")
+            runtime_total = 0
+            ospa_total = 0
+            corrected_ospa_total = 0
+            for i in range(N):
+                print(i)
+                (
+                    detections,
+                    dt,
+                    data_associator,
+                    updater,
+                    deleter,
+                    initiator,
+                    ground_truth,
+                ) = generate_config(
+                    var_r,
+                    var_phi,
+                    start_time,
+                    dt,
+                    model,
+                    filter,
+                    drones_params,
+                    num_datapoints,
+                    recording_path,
+                    gps_path,
+                    gps_offset_delay,
+                    association_distance_sim if simulation else association_distance,
+                    deletion_covariance_sim if simulation else deletion_covariance,
+                    initiation_points_sim if simulation else initiation_points,
+                    simulation=simulation,
+                )
+                runtime_i, ospa_times, ospa_values, ospa_corrected_values = (
+                    run_algorithm(
+                        model,
+                        detections,
+                        start_time,
+                        dt,
+                        data_associator,
+                        updater,
+                        deleter,
+                        initiator,
+                        ground_truth,
+                        simulation=simulation,
+                        plot=plot,
+                    )
+                )
 
-            if model == "cv":
-                ospa_times_cv = ospa_times
-                ospa_values_cv = ospa_values
-                ospa_corrected_values_cv = ospa_corrected_values
-            else:
-                ospa_times_ca = ospa_times
-                ospa_values_ca = ospa_values
-                ospa_corrected_values_ca = ospa_corrected_values
+                if model == "cv":
+                    ospa_times_cv = ospa_times
+                    ospa_values_cv = ospa_values
+                    ospa_corrected_values_cv = ospa_corrected_values
+                else:
+                    ospa_times_ca = ospa_times
+                    ospa_values_ca = ospa_values
+                    ospa_corrected_values_ca = ospa_corrected_values
+
+                runtime_total += runtime_i
+                ospa_total += np.mean(ospa_values)
+                corrected_ospa_total += np.mean(ospa_corrected_values)
 
             print(
-                f"runtime: {runtime_i}s, average OSPA: {np.mean(ospa_values)}, average corrected OSPA: {np.mean(ospa_corrected_values)}"
+                f"runtime: {runtime_total / N}s, average OSPA: {ospa_total / N}, average corrected OSPA: {corrected_ospa_total / N}"
             )
 
-        plt.figure(figsize=(8, 4))
-        plt.plot(
-            ospa_times_cv,
-            ospa_values_cv,
-            color="crimson",
-            linewidth=2,
-            label=f"OSPA Distance CV",
-        )
-        plt.plot(
-            ospa_times_ca,
-            ospa_values_ca,
-            color="purple",
-            linewidth=2,
-            label=f"OSPA Distance CA",
-        )
-        plt.axhline(
-            np.mean(ospa_values_cv),
-            color="blue",
-            linestyle="--",
-            label=f"Mean OSPA CV ({np.mean(ospa_values_cv):.3f}m)",
-        )
-        plt.axhline(
-            np.mean(ospa_values_ca),
-            color="green",
-            linestyle="--",
-            label=f"Mean OSPA CA ({np.mean(ospa_values_ca):.3f}m)",
-        )
-        if not simulation:
-            plt.axhline(
-                np.mean(ospa_corrected_values_cv),
-                color="yellow",
-                linestyle="--",
-                label=f"Corrected OSPA CV ({np.mean(ospa_corrected_values_cv):.3f}m)",
+        if plot_ospa:
+            plt.figure(figsize=(8, 4))
+            plt.plot(
+                ospa_times_cv,
+                ospa_values_cv,
+                color="crimson",
+                linewidth=2,
+                label=f"OSPA Distance CV",
+            )
+            plt.plot(
+                ospa_times_ca,
+                ospa_values_ca,
+                color="purple",
+                linewidth=2,
+                label=f"OSPA Distance CA",
             )
             plt.axhline(
-                np.mean(ospa_corrected_values_ca),
-                color="black",
+                np.mean(ospa_values_cv),
+                color="blue",
                 linestyle="--",
-                label=f"Corrected OSPA CA ({np.mean(ospa_corrected_values_ca):.3f}m)",
+                label=f"Mean OSPA CV ({np.mean(ospa_values_cv):.3f}m)",
             )
+            plt.axhline(
+                np.mean(ospa_values_ca),
+                color="green",
+                linestyle="--",
+                label=f"Mean OSPA CA ({np.mean(ospa_values_ca):.3f}m)",
+            )
+            if not simulation:
+                plt.axhline(
+                    np.mean(ospa_corrected_values_cv),
+                    color="yellow",
+                    linestyle="--",
+                    label=f"Corrected OSPA CV ({np.mean(ospa_corrected_values_cv):.3f}m)",
+                )
+                plt.axhline(
+                    np.mean(ospa_corrected_values_ca),
+                    color="black",
+                    linestyle="--",
+                    label=f"Corrected OSPA CA ({np.mean(ospa_corrected_values_ca):.3f}m)",
+                )
 
-        plt.title(f"OSPA Over Time {filter}", fontsize=11, fontweight="bold")
-        plt.xlabel("Time [s]")
-        plt.ylabel("OSPA [m]")
-        plt.grid(True, linestyle=":", alpha=0.6)
-        plt.legend()
-        plt.show()
+            plt.title(f"OSPA Over Time {filter}", fontsize=11, fontweight="bold")
+            plt.xlabel("Time [s]")
+            plt.ylabel("OSPA [m]")
+            plt.grid(True, linestyle=":", alpha=0.6)
+            plt.legend()
+            plt.show()
     # (runtime_i, ospa_values, ospa_corrected_values) = run_algorithm(
     #
     #     filter="ukf",  # "ucmkf", "ekf", or "ukf"

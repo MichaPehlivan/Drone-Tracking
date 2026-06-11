@@ -107,7 +107,7 @@ def plotJointKalman(
 
     props = dict(boxstyle="round", facecolor="white", alpha=0.8, edgecolor="black")
 
-    fig, ax = plt.subplots(figsize=(7, 7))
+    fig, ax = plt.subplots(figsize=(6, 6))
 
     ax.text(
         0.95,
