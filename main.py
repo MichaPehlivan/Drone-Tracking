@@ -2,7 +2,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 from datetime import datetime
-
+import pandas as pd
 from pipeline import generate_config, run_algorithm
 
 if __name__ == "__main__":
@@ -143,18 +143,35 @@ if __name__ == "__main__":
         #     label=f"Mean OSPA CA ({np.mean(ospa_values_ca):.3f}m)",
         # )
         if not simulation:
-            pass
+
+            window_1_start = datetime(2026, 5, 28, 8, 10, 33, 33)
+            window_1_end = datetime(2026, 5, 28, 8, 10, 46, 33)
+            after_this_time = datetime(2026, 5, 28, 8, 11, 49, 33)
+
+
+            df_cv = pd.DataFrame({'timestamp': ospa_times_cv, 'ospa': ospa_values_cv})
+            cond_between_cv = df_cv['timestamp'].between(window_1_start, window_1_end)
+            cond_after_cv = df_cv['timestamp'] > after_this_time
+            pooled_mean_cv = df_cv[cond_between_cv | cond_after_cv]['ospa'].mean()
+
+
+            df_ca = pd.DataFrame({'timestamp': ospa_times_ca, 'ospa': ospa_values_ca})
+            cond_between_ca = df_ca['timestamp'].between(window_1_start, window_1_end)
+            cond_after_ca = df_ca['timestamp'] > after_this_time
+            pooled_mean_ca = df_ca[cond_between_ca | cond_after_ca]['ospa'].mean()
+
+            print(pooled_mean_ca, pooled_mean_cv)
             plt.axhline(
-                np.mean(ospa_values_cv),
+                float(pooled_mean_cv),
                 color="blue",
                 linestyle="--",
-                label=f"Corrected OSPA CV ({np.mean(ospa_values_cv):.3f}m)",
+                label=f"Corrected OSPA CV ({pooled_mean_cv:.3f}m)",
             )
             plt.axhline(
-                np.mean(ospa_values_ca),
+                float(pooled_mean_ca),
                 color="green",
                 linestyle="--",
-                label=f"Corrected OSPA CA ({np.mean(ospa_values_ca):.3f}m)",
+                label=f"Corrected OSPA CA ({pooled_mean_ca:.3f}m)",
             )
 
         plt.title(f"OSPA Over Time {filter}", fontsize=11, fontweight="bold")
