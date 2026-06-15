@@ -143,7 +143,7 @@ def generate_config(
     F = F_generator(dt) if filter == "ucmkf" else lambda x: F_generator(dt)
 
     f = lambda x: np.dot(F_generator(dt), x)
-
+    eps = 1e-20
     h = (
         np.array([[1, 0, 0, 0], [0, 0, 1, 0]])
         if filter == "ucmkf" and model == "cv"
@@ -176,21 +176,22 @@ def generate_config(
             ]
         )
         if model == "cv"
+
         else np.array(
             [
                 [
-                    (-x[3]) / (x[0] ** 2 + x[3] ** 2),
+                    (-x[3]) / (eps + x[0] ** 2 + x[3] ** 2),
                     0,
                     0,
-                    x[0] / (x[0] ** 2 + x[3] ** 2),
+                    x[0] / (eps + x[0] ** 2 + x[3] ** 2),
                     0,
                     0,
                 ],
                 [
-                    x[0] / np.sqrt(x[0] ** 2 + x[3] ** 2),
+                    x[0] / np.sqrt(eps + x[0] ** 2 + x[3] ** 2),
                     0,
                     0,
-                    x[3] / np.sqrt(x[0] ** 2 + x[3] ** 2),
+                    x[3] / np.sqrt(eps + x[0] ** 2 + x[3] ** 2),
                     0,
                     0,
                 ],
@@ -425,7 +426,7 @@ def run_algorithm(
     if plot:
         from stonesoup.plotter import AnimatedPlotterly
 
-        plotter = AnimatedPlotterly(timesteps, tail_length=0.7)
+        plotter = AnimatedPlotterly(timesteps, tail_length=0.4)
         plotter.fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
         from stonesoup.sensor.radar.radar import RadarBearingRange
         from stonesoup.types.array import StateVector
@@ -446,7 +447,7 @@ def run_algorithm(
             ]
         )
 
-        plotter.fig.update_layout(width=700, height=700)
+        plotter.fig.update_layout(width=650, height=650)
         plotter.plot_measurements(detections, [0, 2] if model == "cv" else [0, 3])
         plotter.plot_ground_truths(
             ground_truth, mapping=[0, 2] if model == "cv" else [0, 3]
