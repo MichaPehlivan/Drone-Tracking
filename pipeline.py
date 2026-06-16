@@ -8,6 +8,7 @@ from timeit import default_timer as timer
 
 from Evaluation_Metrics import ospa_stonesoup
 from Kalman_Filters import UCMKalmanFilter, ExtendedKalmanFilter, UnscentedKalmanFilter
+from Track_Simulation import simulateLinearTrackPolar
 from Track_Simulation.TrackSimulator import simulateRandomAccelTrackPolar
 from Utils.DecodeGPS import gps_to_ground_truth, interpolate_ground_truth
 from Utils.Wrapper_Functions import (
@@ -51,7 +52,7 @@ def get_detections(
 ):
     if simulation:
         shared_config = {
-            "sim_function": simulateRandomAccelTrackPolar,
+            "sim_function": simulateLinearTrackPolar,
             "start_time": start_time,
             "measurement_model": measurement_model,
             "model": model,
@@ -59,7 +60,7 @@ def get_detections(
             "dt": dt,
             "sigma_r": np.sqrt(var_r),
             "sigma_phi": np.sqrt(var_phi),
-            "add_clutter": True,
+            "add_clutter": False,
         }
 
         detections, ground_truth = SimulatorPolarMultitarget_stonesoup(
@@ -395,7 +396,7 @@ def run_algorithm(
 
     # Evaluate using the ALIGNED ground truth
     OSPA_times, OSPA_values, OSPA_corrected_values = ospa_stonesoup(
-        all_tracks, ground_truth if simulation else interpolated_ground_truth
+        all_tracks, ground_truth if simulation else interpolated_ground_truth, model
     )
 
     # plotter = Plotter()

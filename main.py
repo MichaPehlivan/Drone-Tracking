@@ -13,25 +13,27 @@ if __name__ == "__main__":
 
     ndoppler = 500
     dt = 210e-6 * ndoppler
-    start_time = datetime(2026, 5, 28, 8, 10, 18, 33)
-
+    # start_time = datetime(2026, 5, 28, 8, 10, 18, 33)
+    start_time = datetime.now()
     recording_path = "Data/sidetoside/detections_mvdr_argmax_10db_500.csv"
     gps_path = "Data/sidetoside/flight2-sidetoside-GPS.csv"
 
     # select simulation or real data
     simulation = True
-    plot = False
-    plot_ospa = False
+    plot = True
+    plot_ospa = True
 
     # simulation count
-    N = 100
+    N = 1
 
-    num_datapoints = int(30 / dt)
-    x_initial = 50
-    y_initial = 50
+    num_datapoints = int(4/ dt)
+    x_initial = 5
+    y_initial = 5
 
-    var_r = 0.444
-    var_phi = 0.000720
+    # var_r = 0.444
+    # var_phi = 0.000720
+    var_r = 0
+    var_phi = 0
 
     association_distance_sim = 15
     deletion_covariance_sim = 40
@@ -43,24 +45,24 @@ if __name__ == "__main__":
 
     drones_params = [
         {"x0": x_initial, "y0": y_initial, "v_x": 5, "v_y": 5},
-        {"x0": x_initial - 5, "y0": y_initial - 5, "v_x": -5, "v_y": 5},
-        {
-            "x0": x_initial + 20,
-            "y0": y_initial + 20,
-            "v_x": 3,
-            "v_y": -4,
-            "delay_steps": 10,
-        },
-        {
-            "x0": x_initial + 20,
-            "y0": y_initial - 20,
-            "v_x": 3,
-            "v_y": 5,
-            "delay_steps": 30,
-        },
+        # {"x0": x_initial + 30, "y0": y_initial , "v_x": -5, "v_y": 5},
+        # {
+        #     "x0": x_initial + 20,
+        #     "y0": y_initial + 20,
+        #     "v_x": 3,
+        #     "v_y": -4,
+        #     "delay_steps": 10,
+        # },
+        # {
+        #     "x0": x_initial + 20,
+        #     "y0": y_initial - 20,
+        #     "v_x": 3,
+        #     "v_y": 5,
+        #     "delay_steps": 30,
+        # },
     ]
 
-    # sidetoside
+
     print(f"running on {"simulated" if simulation else "real"} data")
     for filter in ["ucmkf", "ekf", "ukf"]:
         ospa_times_cv = []
@@ -135,6 +137,7 @@ if __name__ == "__main__":
             )
 
         if plot_ospa:
+            print(ospa_values_cv)
             plt.figure(figsize=(8, 4))
             plt.plot(
                 ospa_times_cv,
@@ -143,6 +146,7 @@ if __name__ == "__main__":
                 linewidth=2,
                 label=f"OSPA Distance CV",
             )
+            plt.ylim([0,10])
             plt.plot(
                 ospa_times_ca,
                 ospa_values_ca,
