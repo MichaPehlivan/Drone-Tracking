@@ -40,9 +40,9 @@ def get_average_ospa(x_history, trueTrack):
     return average_ospa
 
 
-def ospa_stonesoup(track, ground_truth, c=10, p=1):
+def ospa_stonesoup(model, track, ground_truth, c=10, p=1):
 
-    pos_measure = Euclidean(mapping=[0, 3])
+    pos_measure = Euclidean(mapping=[0, 2] if model == "cv" else [0, 3])
 
     ospa_generator = OSPAMetric(c=c, p=p, measure=pos_measure, generator_name="OSPA")
 
@@ -63,8 +63,8 @@ def ospa_stonesoup(track, ground_truth, c=10, p=1):
     return ospa_times, ospa_values, corrected_ospa_values
 
 
-def mean_ospa_stonesoup(track, ground_truth, c=10, p=1):
-    pos_measure = Euclidean(mapping=[0, 3])
+def mean_ospa_stonesoup(model, track, ground_truth, c=10, p=1):
+    pos_measure = Euclidean(mapping=[0, 2] if model == "cv" else [0, 3])
 
     ospa_generator = OSPAMetric(c=c, p=p, measure=pos_measure, generator_name="OSPA")
 

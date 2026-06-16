@@ -256,7 +256,7 @@ for n, measurements in enumerate(detections):
     all_tracks |= tracks
 
 
-ospa_stonesoup(track=all_tracks, ground_truth=ground_truths)
+ospa_stonesoup("ca", track=all_tracks, ground_truth=ground_truths)
 
 # Plotting
 plotter = Plotter()

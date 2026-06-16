@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # select simulation or real data
     simulation = True
     plot = False
-    plot_ospa = False
+    plot_ospa = True
 
     # simulation count
     N = 100
@@ -30,8 +30,8 @@ if __name__ == "__main__":
     x_initial = 50
     y_initial = 50
 
-    var_r = 0.444
-    var_phi = 0.000720
+    var_r = 0  # 0.444
+    var_phi = 0  # 0.000720
 
     association_distance_sim = 15
     deletion_covariance_sim = 40
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     ]
 
     # sidetoside
-    print(f"running on {"simulated" if simulation else "real"} data")
+    print("running on simulated data") if simulation else print("running on real data")
     for filter in ["ucmkf", "ekf", "ukf"]:
         ospa_times_cv = []
         ospa_times_ca = []

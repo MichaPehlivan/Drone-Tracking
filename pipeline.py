@@ -395,7 +395,7 @@ def run_algorithm(
 
     # Evaluate using the ALIGNED ground truth
     OSPA_times, OSPA_values, OSPA_corrected_values = ospa_stonesoup(
-        all_tracks, ground_truth if simulation else interpolated_ground_truth
+        model, all_tracks, ground_truth if simulation else interpolated_ground_truth
     )
 
     # plotter = Plotter()
