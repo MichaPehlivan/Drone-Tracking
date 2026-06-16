@@ -66,13 +66,6 @@ def gps_to_ground_truth(**kwargs):
         ts.append(timestamp)
         ground_truth.append(truth_state)
 
-    # plotting test
-    # from stonesoup.plotter import AnimatedPlotterly
-    # print("plotting")
-    # plotter = AnimatedPlotterly(ts, tail_length=0.8)
-    # plotter.fig.update_layout(width=700, height=700)
-    # plotter.plot_ground_truths([ground_truth], mapping=[0, 2] if kwargs["model"] == "cv" else [0, 3])
-    # plotter.fig.show()
     return [ground_truth]
 
 

@@ -54,7 +54,7 @@ if __name__ == "__main__":
     ]
 
     # sidetoside
-    for filter in ["ukf"]:
+    for filter in ["ukf", "ucmkf", "ekf"]:
         ospa_times_cv = []
         ospa_times_ca = []
         ospa_values_cv = []

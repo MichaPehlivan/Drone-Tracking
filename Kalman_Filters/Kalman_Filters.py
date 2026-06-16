@@ -14,14 +14,9 @@ class KalmanFilter:
     inputs:
         F: State transition matrix (system model)
         H: Observation matrix
-        R: Measurement noise covariance TODO: figure out appropriate values 1
+        R: Measurement noise covariance
         x0: Initial state estimate
-            state vector:
-                |    x         |
-                |    y         |
-                |  x_dot (vx)  |
-                |_ y_dot (vy) _|
-        Q: Process noise covariance (uncertainty in the process)  TODO: figure out appropriate values 2
+        Q: Process noise covariance (uncertainty in the process)
         P0: Initial Error covariance (needs to be a large value)
 
     Methods:
@@ -61,14 +56,9 @@ class UCMKalmanFilter:
     inputs:
         F: State transition matrix (system model)
         H: Observation matrix
-        R: Measurement noise covariance TODO: figure out appropriate values 1
+        R: Measurement noise covariance
         x0: Initial state estimate
-            state vector:
-                |    x         |
-                |    y         |
-                |  x_dot (vx)  |
-                |_ y_dot (vy) _|
-        Q: Process noise covariance (uncertainty in the process)  TODO: figure out appropriate values 2
+        Q: Process noise covariance (uncertainty in the process)
         P0: Initial Error covariance (needs to be a large value)
 
     Methods:
@@ -133,14 +123,9 @@ class ExtendedKalmanFilter:
         h: Observation function
         F: Jacobian of f
         H: Jacobian of h
-        R: Measurement noise covariance TODO: figure out appropriate values 1
-        x0: Initial state estimate
-            state vector:
-                |    x         |
-                |    y         |
-                |  x_dot (vx)  |
-                |_ y_dot (vy) _|
-        Q: Process noise covariance (uncertainty in the process)  TODO: figure out appropriate values 2
+        R: Measurement noise covariance
+        x0: Initial state estimate (mostly dummy variable)
+        Q: Process noise covariance (uncertainty in the process)
         P0: Initial Error covariance (needs to be a large value)
 
     Methods:
@@ -185,14 +170,10 @@ class UnscentedKalmanFilter:
     inputs:
         f: State transition function
         h: Observation function
-        R: Measurement noise covariance TODO: figure out appropriate values 1
+        R: Measurement noise covariance
         x0: Initial state estimate
-            state vector:
-                |    x         |
-                |    y         |
-                |  x_dot (vx)  |
-                |_ y_dot (vy) _|
-        Q: Process noise covariance (uncertainty in the process)  TODO: figure out appropriate values 2
+
+        Q: Process noise covariance (uncertainty in the process)
         P0: Initial Error covariance (needs to be a large value)
         alpha: scaling parameter
         beta: scaling parameter
