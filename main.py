@@ -72,10 +72,9 @@ if __name__ == "__main__":
         for model in ["cv", "ca"]:
             print(f"running {filter} with {model} model for {N} iterations")
             runtime_total = 0
-            ospa_total = 0
-            corrected_ospa_total = 0
-            for i in range(N):
-                print(i)
+            ospa_scores = []
+            corrected_ospa_scores = []
+            for _ in range(N):
                 (
                     detections,
                     dt,
@@ -127,12 +126,17 @@ if __name__ == "__main__":
                     ospa_corrected_values_ca = ospa_corrected_values
 
                 runtime_total += runtime_i
-                ospa_total += np.mean(ospa_values)
-                corrected_ospa_total += np.mean(ospa_corrected_values)
+                ospa_scores.append(np.mean(ospa_values))
+                corrected_ospa_scores.append(np.mean(ospa_corrected_values))
 
-            print(
-                f"runtime: {runtime_total / N}s, average OSPA: {ospa_total / N}, average corrected OSPA: {corrected_ospa_total / N}"
-            )
+            if simulation:
+                print(
+                    f"runtime: {runtime_total / N}s, OSPA mean: {np.mean(ospa_scores)}, OSPA variance: {np.var(ospa_scores)}"
+                )
+            else:
+                print(
+                    f"runtime: {runtime_total / N}s, OSPA mean: {np.mean(ospa_scores)}, corrected OSPA mean: {np.mean(corrected_ospa_scores)}"
+                )
 
         if plot_ospa:
             plt.figure(figsize=(8, 4))
