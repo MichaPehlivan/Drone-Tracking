@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # select simulation or real data
     simulation = True
     plot = False
-    plot_ospa = True
+    plot_ospa = False
 
     # simulation count
     N = 100
@@ -30,8 +30,8 @@ if __name__ == "__main__":
     x_initial = 50
     y_initial = 50
 
-    var_r = 0  # 0.444
-    var_phi = 0  # 0.000720
+    var_r = 0.444
+    var_phi = 0.000720
 
     association_distance_sim = 15
     deletion_covariance_sim = 40
@@ -74,7 +74,7 @@ if __name__ == "__main__":
             runtime_total = 0
             ospa_scores = []
             corrected_ospa_scores = []
-            for _ in range(N):
+            for _ in range(N if simulation else 1):
                 (
                     detections,
                     dt,
