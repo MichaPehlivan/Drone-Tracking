@@ -425,7 +425,7 @@ def run_algorithm(
     if plot:
         from stonesoup.plotter import AnimatedPlotterly
 
-        plotter = AnimatedPlotterly(timesteps, tail_length=0.7)
+        plotter = AnimatedPlotterly(timesteps, tail_length=0.3)
         plotter.fig.update_layout(yaxis=dict(scaleanchor="x", scaleratio=1))
         from stonesoup.sensor.radar.radar import RadarBearingRange
         from stonesoup.types.array import StateVector

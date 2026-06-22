@@ -12,16 +12,16 @@ if __name__ == "__main__":
     # model = "ca"  # "cv" or "ca"
 
     ndoppler = 500
-    dt = 210e-6 * ndoppler
+    dt = 225e-6 * ndoppler
     start_time = datetime(2026, 5, 28, 8, 10, 18, 33)
 
     recording_path = "Data/sidetoside/detections_mvdr_argmax_10db_500.csv"
     gps_path = "Data/sidetoside/flight2-sidetoside-GPS.csv"
 
     # select simulation or real data
-    simulation = True
-    plot = False
-    plot_ospa = False
+    simulation = False
+    plot = True
+    plot_ospa = True
 
     # simulation count
     N = 100
@@ -36,11 +36,11 @@ if __name__ == "__main__":
     association_distance_sim = 15
     deletion_covariance_sim = 40
     initiation_points_sim = 10
-    association_distance = 5
+    association_distance = 3.6
     deletion_covariance = 15
     initiation_points = 15
-    gps_offset_delay = 40  # offset for the recordings
-
+    # gps_offset_delay = 38# offset for the recordings
+    gps_offset_delay = 38.4
     drones_params = [
         {"x0": x_initial, "y0": y_initial, "v_x": 5, "v_y": 5},
         {"x0": x_initial - 5, "y0": y_initial - 5, "v_x": -5, "v_y": 5},
@@ -62,14 +62,14 @@ if __name__ == "__main__":
 
     # sidetoside
     print("running on simulated data") if simulation else print("running on real data")
-    for filter in ["ucmkf", "ekf", "ukf"]:
+    for filter in ["ekf"]:
         ospa_times_cv = []
         ospa_times_ca = []
         ospa_values_cv = []
         ospa_values_ca = []
         ospa_corrected_values_cv = []
         ospa_corrected_values_ca = []
-        for model in ["cv", "ca"]:
+        for model in ["cv"]:
             print(f"running {filter} with {model} model for {N} iterations")
             runtime_total = 0
             ospa_scores = []
@@ -147,38 +147,38 @@ if __name__ == "__main__":
                 linewidth=2,
                 label=f"OSPA Distance CV",
             )
-            plt.plot(
-                ospa_times_ca,
-                ospa_values_ca,
-                color="purple",
-                linewidth=2,
-                label=f"OSPA Distance CA",
-            )
+            # plt.plot(
+            #     ospa_times_ca,
+            #     ospa_values_ca,
+            #     color="purple",
+            #     linewidth=2,
+            #     label=f"OSPA Distance CA",
+            # )
             plt.axhline(
                 np.mean(ospa_values_cv),
-                color="blue",
+                color="grey",
                 linestyle="--",
                 label=f"Mean OSPA CV ({np.mean(ospa_values_cv):.3f}m)",
             )
-            plt.axhline(
-                np.mean(ospa_values_ca),
-                color="green",
-                linestyle="--",
-                label=f"Mean OSPA CA ({np.mean(ospa_values_ca):.3f}m)",
-            )
+            # plt.axhline(
+            #     np.mean(ospa_values_ca),
+            #     color="green",
+            #     linestyle="--",
+            #     label=f"Mean OSPA CA ({np.mean(ospa_values_ca):.3f}m)",
+            # )
             if not simulation:
                 plt.axhline(
                     np.mean(ospa_corrected_values_cv),
-                    color="yellow",
+                    color="blue",
                     linestyle="--",
                     label=f"Corrected OSPA CV ({np.mean(ospa_corrected_values_cv):.3f}m)",
                 )
-                plt.axhline(
-                    np.mean(ospa_corrected_values_ca),
-                    color="black",
-                    linestyle="--",
-                    label=f"Corrected OSPA CA ({np.mean(ospa_corrected_values_ca):.3f}m)",
-                )
+                # plt.axhline(
+                #     np.mean(ospa_corrected_values_ca),
+                #     color="black",
+                #     linestyle="--",
+                #     label=f"Corrected OSPA CA ({np.mean(ospa_corrected_values_ca):.3f}m)",
+                # )
 
             plt.title(f"OSPA Over Time {filter}", fontsize=11, fontweight="bold")
             plt.xlabel("Time [s]")
